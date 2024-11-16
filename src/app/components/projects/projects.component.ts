@@ -23,8 +23,6 @@ interface Project {
       }
     </div>
     <div class="content-container">
-      <h2>PROJECTS</h2>
-
       <div class="projects-grid">
         <div class="project-card" *ngFor="let project of projects" [class.expanded]="project.isExpanded">
           <img [src]="project.mainImage" [alt]="project.title" class="project-image">
