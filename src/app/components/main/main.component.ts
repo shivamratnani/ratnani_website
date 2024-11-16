@@ -15,9 +15,8 @@ import { CommonModule } from '@angular/common';
       <div class="content-area">
         <div class="main-content">
           <div class="text-container">
-            <h1 class="title">Welcome</h1>
-            <p class="subtitle">Your Name</p>
-            <p class="description">Your Role or Tagline</p>
+            <h1 class="title">Welcome to ratnani.org!!</h1>
+            <p class="subtitle">By Shivam Ratnani</p>
           </div>
         </div>
       </div>
