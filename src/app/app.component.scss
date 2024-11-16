@@ -10,9 +10,10 @@
   top: 0;
   left: 0;
   right: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(10, 25, 47, 0.85);
   backdrop-filter: blur(10px);
   z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .nav-content {
@@ -41,12 +42,13 @@
   color: white;
   font-size: 1rem;
   padding: 0.5rem 1rem;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
   cursor: pointer;
   white-space: nowrap;
 
   &:hover, &.active {
-    color: #b67aef;
+    color: #64ffda;
+    transform: translateY(-1px);
   }
 }
 

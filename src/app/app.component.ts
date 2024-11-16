@@ -2,6 +2,10 @@ import { Component, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MainComponent } from './components/main/main.component';
 import { OverviewComponent } from './components/overview/overview.component';
+import { ProjectsComponent } from './components/projects/projects.component';
+import { PhotographyComponent } from './components/photography/photography.component';
+import { ResumeComponent } from './components/resume/resume.component';
+import { ContactComponent } from './components/contact/contact.component';
 
 @Component({
   selector: 'app-root',
@@ -9,7 +13,11 @@ import { OverviewComponent } from './components/overview/overview.component';
   imports: [
     CommonModule,
     MainComponent,
-    OverviewComponent
+    OverviewComponent,
+    ProjectsComponent,
+    PhotographyComponent,
+    ResumeComponent,
+    ContactComponent
   ],
   template: `
     <nav class="navigation">
@@ -31,7 +39,21 @@ import { OverviewComponent } from './components/overview/overview.component';
         <app-overview></app-overview>
       </section>
 
-      <!-- Other sections will go here -->
+      <section id="projects" class="section">
+        <app-projects></app-projects>
+      </section>
+
+      <section id="photography" class="section">
+        <app-photography></app-photography>
+      </section>
+
+      <section id="resume" class="section">
+        <app-resume></app-resume>
+      </section>
+
+      <section id="contact" class="section">
+        <app-contact></app-contact>
+      </section>
     </main>
   `,
   styleUrls: ['./app.component.scss']
@@ -43,7 +65,6 @@ export class AppComponent implements AfterViewInit {
     { name: 'Projects', id: 'projects' },
     { name: 'Photography', id: 'photography' },
     { name: 'Resume', id: 'resume' },
-    { name: 'Click Me!!', id: 'click-me' },
     { name: 'Contact + Links', id: 'contact' }
   ];
 
@@ -51,7 +72,6 @@ export class AppComponent implements AfterViewInit {
   title = 'ratnani_website';
 
   ngAfterViewInit() {
-    // Check if we're in the browser environment
     if (typeof window !== 'undefined') {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -61,7 +81,6 @@ export class AppComponent implements AfterViewInit {
         });
       }, { threshold: 0.5 });
 
-      // Observe all sections
       document.querySelectorAll('.section').forEach((section) => {
         observer.observe(section);
       });
