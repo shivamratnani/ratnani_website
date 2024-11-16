@@ -12,7 +12,6 @@ import { CommonModule } from '@angular/common';
       }
     </div>
     <div class="content-container">
-      <h2>RESUME</h2>
       <div class="resume-wrapper">
         <iframe
           src="assets/Shivam Ratnani - Resume.pdf#zoom=100"

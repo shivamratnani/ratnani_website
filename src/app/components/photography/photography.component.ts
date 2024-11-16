@@ -18,8 +18,6 @@ interface Photo {
       }
     </div>
     <div class="content-container">
-      <h2>PHOTOGRAPHY</h2>
-
       <div class="photo-grid">
         <div class="photo-card"
              *ngFor="let photo of photos"

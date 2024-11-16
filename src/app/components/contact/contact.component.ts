@@ -22,9 +22,6 @@ interface ContactForm {
       }
     </div>
     <div class="content-container">
-      <h2><span class="highlight">CONTACT</span> US</h2>
-      <p class="subtitle">If you have questions, feel free to get in touch.</p>
-
       <div class="contact-wrapper">
         <div class="contact-info">
           <div class="info-item">
