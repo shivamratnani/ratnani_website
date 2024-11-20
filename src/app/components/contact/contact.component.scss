@@ -154,9 +154,18 @@ h2 {
   pointer-events: none;
 }
 
+@function random_range($min, $max) {
+  $rand: random();
+  $random_range: $min + floor($rand * (($max - $min) + 1));
+  @return $random_range;
+}
+
 @for $i from 1 through 63 {
   .star-#{$i} {
     $size: random(3) + px;
+    $twinkle_time: #{random_range(10, 30) / 10}s;
+    $float_time: #{random_range(10, 20) / 10}s;
+
     position: absolute;
     width: $size;
     height: $size;
@@ -166,8 +175,8 @@ h2 {
     left: random(100) + vw;
     opacity: 0;
     animation:
-      twinkle #{random(2) + 1}s linear infinite,
-      float #{random(8) + 4}s ease-in-out infinite;
+      twinkle $twinkle_time linear infinite,
+      float $float_time ease-in-out infinite;
     animation-delay: #{random(3)}s;
     box-shadow: 0 0 #{random(4) + 2}px rgba(255, 255, 255, 0.8);
   }
