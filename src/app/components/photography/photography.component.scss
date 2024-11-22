@@ -1,0 +1,196 @@
+.star-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+@function random_range($min, $max) {
+  $rand: random();
+  $random_range: $min + floor($rand * (($max - $min) + 1));
+  @return $random_range;
+}
+
+@for $i from 1 through 63 {
+  .star-#{$i} {
+    $size: random(3) + px;
+    $twinkle_time: #{random_range(10, 30) / 10}s;
+    $float_time: #{random_range(10, 20) / 10}s;
+
+    position: absolute;
+    width: $size;
+    height: $size;
+    background: white;
+    border-radius: 50%;
+    top: random(100) + vh;
+    left: random(100) + vw;
+    opacity: 0;
+    animation:
+      twinkle $twinkle_time linear infinite,
+      float $float_time ease-in-out infinite;
+    animation-delay: #{random(3)}s;
+    box-shadow: 0 0 #{random(4) + 2}px rgba(255, 255, 255, 0.8);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(#{random(20) - 10}px, #{random(20) - 10}px);
+  }
+  50% {
+    transform: translate(#{random(15) - 7}px, #{random(15) - 7}px);
+  }
+  75% {
+    transform: translate(#{random(20) - 10}px, #{random(20) - 10}px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+:host {
+  display: block;
+  height: 100%;
+  background: linear-gradient(0deg, #550080 0%, #1a1a1a 100%);
+  color: #ffffff;
+}
+
+.content-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 2rem;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+h2 {
+  text-align: center;
+  color: #64ffda;
+  margin-bottom: 3rem;
+  font-size: 2.5rem;
+}
+
+.photo-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
+  align-items: start;
+}
+
+.photo-card {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: scale(1.02);
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(100, 255, 218, 0.1);
+      pointer-events: none;
+    }
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+}
+
+.photo-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 25, 47, 0.98);
+  z-index: 1001;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(8px);
+}
+
+.overlay-content {
+  position: relative;
+  width: 90vw;
+  height: 90vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
+
+.close-btn {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  background: none;
+  border: none;
+  color: #64ffda;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: white;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.photo-overlay {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@media (max-width: 768px) {
+  .photo-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .photo-overlay {
+    padding: 1rem;
+
+    .close-btn {
+      top: -30px;
+      right: -10px;
+    }
+  }
+}
