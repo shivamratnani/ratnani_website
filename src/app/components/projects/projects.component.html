@@ -1,0 +1,51 @@
+<section class="projects-section" id="projects">
+  <div class="content-container">
+    <h2>Projects</h2>
+
+    <div class="projects-grid">
+      <div class="project-card" *ngFor="let project of projects">
+        <!-- Collapsed View -->
+        <div class="project-preview" [class.expanded]="project.isExpanded">
+          <div class="main-image">
+            <img [src]="project.mainImage" [alt]="project.title">
+          </div>
+
+          <div class="project-info">
+            <h3>{{ project.title }}</h3>
+            <p class="overview">{{ project.overview }}</p>
+            <div class="project-links">
+              <a [href]="project.githubLink" target="_blank" class="github-link">
+                <i class="fab fa-github"></i> View on GitHub
+              </a>
+              <button class="expand-btn" (click)="toggleProject(project)">
+                {{ project.isExpanded ? 'Show Less' : 'Show More' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expanded View -->
+        <div class="project-details" *ngIf="project.isExpanded" [@expandCollapse]>
+          <div class="detailed-description">
+            <p>{{ project.detailedDescription }}</p>
+          </div>
+
+          <div class="additional-images">
+            <img *ngFor="let image of project.additionalImages"
+                 [src]="image"
+                 alt="Additional project image"
+                 (click)="openImageModal(image)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Image Modal -->
+    <div class="image-modal" *ngIf="showModal" (click)="closeImageModal()">
+      <div class="modal-content">
+        <span class="close-button" (click)="closeImageModal()">&times;</span>
+        <img [src]="selectedImage" alt="Project image" *ngIf="selectedImage">
+      </div>
+    </div>
+  </div>
+</section>

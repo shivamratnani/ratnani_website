@@ -1,0 +1,11 @@
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-icon {
+  font-size: 16px;
+  /* If you're using Bootstrap icons or similar */
+  vertical-align: middle;
+} 
