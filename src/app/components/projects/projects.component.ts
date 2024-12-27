@@ -23,26 +23,22 @@ interface Project {
         <div class="project-card" *ngFor="let project of projects" [class.expanded]="project.isExpanded">
           <div class="project-content">
             <div class="project-header">
-              <img [src]="project.mainImage" [alt]="project.title" class="project-image">
               <h3>{{ project.title }}</h3>
               <p class="overview">{{ project.overview }}</p>
             </div>
 
             <div class="project-actions">
-              <a [href]="project.githubLink" target="_blank" class="github-link">View on GitHub</a>
-              <button class="toggle-btn" (click)="toggleProject(project)">
+              <a [href]="project.githubLink" target="_blank" class="github-link">
+                <i class="bi bi-github"></i> View on GitHub
+              </a>
+              <button class="github-link" (click)="toggleProject(project)">
+                <i class="bi" [ngClass]="project.isExpanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                 {{ project.isExpanded ? 'Show Less' : 'Show More' }}
               </button>
             </div>
 
             <div class="expanded-content" *ngIf="project.isExpanded">
               <div class="detailed-description" [innerHTML]="project.detailedDescription"></div>
-              <div class="additional-images">
-                <img *ngFor="let image of project.additionalImages"
-                     [src]="image"
-                     alt="Additional project image"
-                     (click)="openImageModal(image)">
-              </div>
             </div>
           </div>
         </div>
@@ -56,218 +52,256 @@ export class ProjectsComponent {
     {
       id: 1,
       title: 'Stock Market Analysis Tool',
-      mainImage: 'assets/images/stock-analysis-main.jpg',
+      mainImage: '',
       overview: 'A sophisticated Python-based stock market analysis tool leveraging real-time data and advanced visualization techniques to provide comprehensive market insights and trading analytics.',
       githubLink: 'https://github.com/shivamratnani/Stock-Volatility-Analyzer',
       isExpanded: false,
       detailedDescription: `
-        Built with Python and modern data analysis libraries, this tool offers real-time market analysis and visualization capabilities for both individual stocks and broader market trends.<br><br>
+        A Python-based tool for analyzing stock market data and visualizing market trends. This application provides real-time and historical stock data analysis with an interactive command-line interface.<br><br>
 
-        <strong>Key Features:</strong>
+        <strong>Market Gainers and Losers Analysis:</strong>
         <ul>
-          <li>Real-time stock data analysis with concurrent processing</li>
-          <li>Technical indicator calculations (SMA20, SMA50, RSI, MACD)</li>
-          <li>Custom date range analysis with historical data support</li>
-          <li>Interactive visualization of price movements and volume data</li>
-          <li>Automated market calendar integration for trading day validation</li>
-          <li>Support for both S&P 500 and broader market analysis</li>
-          <li>Efficient data caching system for optimized performance</li>
+          <li>Analyze top gainers and losers for any specified time period</li>
+          <li>Support for both S&P 500 stocks and full market analysis</li>
+          <li>Flexible time periods from 1-minute intervals to 10-year historical data</li>
+          <li>Configurable limit for number of stocks to display</li>
         </ul>
 
-        <strong>Technical Implementation:</strong>
+        <strong>Custom Period Analysis:</strong>
         <ul>
-          <li>Utilized yfinance API for real-time market data retrieval</li>
-          <li>Implemented concurrent processing using Python's concurrent.futures</li>
-          <li>Built interactive charts using matplotlib with custom styling</li>
-          <li>Developed robust error handling and logging system</li>
-          <li>Created flexible data caching mechanism for improved performance</li>
-          <li>Integrated pandas_market_calendars for accurate market timing</li>
+          <li>Analyze stock performance between any two dates</li>
+          <li>Automatic adjustment to last trading day if end date falls on non-trading day</li>
+          <li>Dynamic interval selection based on date range</li>
+          <li>Comprehensive performance metrics including price changes and volume</li>
         </ul>
 
-        <strong>Development Challenges:</strong>
+        <strong>Stock Information:</strong>
         <ul>
-          <li>Handling API rate limits and data consistency</li>
-          <li>Implementing efficient concurrent processing</li>
-          <li>Managing real-time data streams</li>
-          <li>Optimizing performance for large datasets</li>
-          <li>Building reliable error recovery systems</li>
+          <li>Access basic company information including sector and industry</li>
+          <li>View key metrics like market cap, current price, and trading volumes</li>
+          <li>Display 52-week price ranges</li>
+          <li>Show average trading volumes and market trends</li>
+        </ul>
+
+        <strong>Technical Analysis:</strong>
+        <ul>
+          <li>Generate price charts with customizable time periods</li>
+          <li>Display moving averages (20-day and 50-day SMA when applicable)</li>
+          <li>Volume analysis and visualization</li>
+          <li>Interactive charts with matplotlib integration</li>
+        </ul>
+
+        <strong>Market-Aware Features:</strong>
+        <ul>
+          <li>Automatic detection of market trading hours</li>
+          <li>Intraday data options only available during market hours</li>
+          <li>Fallback to last trading day for non-trading periods</li>
+          <li>Real-time market status updates</li>
+        </ul>
+
+        <strong>Technical Requirements:</strong>
+        <ul>
+          <li>Python 3.7+</li>
+          <li>yfinance for data retrieval</li>
+          <li>pandas for data processing</li>
+          <li>matplotlib for visualization</li>
+          <li>pandas_market_calendars for market timing</li>
+          <li>pytz for timezone handling</li>
+          <li>requests for API communication</li>
+        </ul>
+
+        <strong>Error Handling:</strong>
+        <ul>
+          <li>Failed analysis attempts are logged to 'failed_analysis.txt'</li>
+          <li>Automatic retry mechanism for API calls</li>
+          <li>Graceful handling of market closures and invalid dates</li>
+          <li>Comprehensive input validation for tickers and dates</li>
+          <li>Rate limiting protection for API requests</li>
         </ul>
 
         <strong>Future Enhancements:</strong>
         <ul>
-          <li>Machine learning-based trend prediction</li>
-          <li>Advanced options trading analysis</li>
-          <li>Real-time alert system</li>
-          <li>Custom indicator development</li>
-          <li>Web-based user interface</li>
+          <li>GUI interface for improved user experience</li>
+          <li>Advanced technical indicators</li>
+          <li>Portfolio tracking capabilities</li>
+          <li>Export functionality for analysis results</li>
+          <li>Enhanced data visualization options</li>
+          <li>Real-time price alerts</li>
+          <li>Custom watchlist feature</li>
         </ul>`,
       additionalImages: [
-        'assets/images/stock-analysis-chart.jpg',
-        'assets/images/stock-analysis-technical.jpg'
+        ''
       ]
     },
     {
       id: 2,
       title: 'Connect Four AI',
-      mainImage: 'assets/images/connect4-main.jpg',
+      mainImage: '',
       overview: 'A sophisticated Python-based implementation of Connect Four featuring an AI opponent powered by the Minimax algorithm with alpha-beta pruning, combining strategic gameplay with a graphical interface for an engaging player-versus-computer experience.',
       githubLink: 'https://github.com/shivamratnani/Connect4-AI',
       isExpanded: false,
       detailedDescription: `
-        Built using Python and leveraging advanced algorithms, this implementation of Connect Four offers an intelligent AI opponent and an interactive gaming experience.<br><br>
+        Built using Python, Pygame, and the Minimax algorithm, this Connect Four implementation showcases AI strategy through an engaging, interactive interface.<br><br>
 
-        <strong>Key Features:</strong>
+        <strong>Key Technical Features:</strong>
         <ul>
-          <li>Intelligent AI opponent using Minimax algorithm with alpha-beta pruning</li>
-          <li>Real-time graphical interface using Pygame</li>
+          <li>Minimax algorithm with alpha-beta pruning</li>
+          <li>Real-time graphical interface with Pygame</li>
           <li>Dynamic board evaluation system</li>
-          <li>Advanced move prediction and strategy</li>
-          <li>Interactive player controls</li>
+          <li>NumPy-based game state management</li>
           <li>Win detection across multiple directions</li>
-          <li>Visual feedback and game state display</li>
+          <li>Position-based heuristic evaluation</li>
+          <li>Advanced move prediction strategy</li>
         </ul>
 
         <strong>Technical Implementation:</strong>
         <ul>
-          <li>NumPy-based board representation for efficient operations</li>
-          <li>Minimax algorithm with configurable depth (currently set to 5 moves)</li>
-          <li>Position evaluation heuristics for strategic decision making</li>
-          <li>Pygame-based graphics system for smooth visualization</li>
-          <li>Real-time piece movement and board updates</li>
-          <li>Optimized win detection algorithms</li>
+          <li>Custom position evaluation algorithms</li>
+          <li>Performance-optimized minimax search</li>
+          <li>Strategic depth-limited game tree search</li>
+          <li>Event-driven Pygame graphics system</li>
+          <li>Efficient board state representation</li>
+          <li>Multi-directional win detection</li>
+          <li>Modular component architecture</li>
         </ul>
 
         <strong>Development Challenges:</strong>
         <ul>
-          <li>Implementing efficient minimax algorithm with pruning</li>
-          <li>Balancing AI difficulty for engaging gameplay</li>
-          <li>Creating responsive and intuitive UI</li>
-          <li>Optimizing win detection across all directions</li>
-          <li>Managing game state transitions smoothly</li>
+          <li>Optimizing minimax algorithm efficiency</li>
+          <li>Balancing AI difficulty and response time</li>
+          <li>Implementing smooth graphics rendering</li>
+          <li>Managing complex game state transitions</li>
+          <li>Creating responsive player controls</li>
+          <li>Ensuring consistent game logic</li>
+          <li>Handling edge cases in move validation</li>
         </ul>
 
         <strong>Future Enhancements:</strong>
         <ul>
           <li>Adjustable AI difficulty levels</li>
-          <li>Multiplayer support</li>
-          <li>Custom board sizes</li>
-          <li>Score tracking system</li>
+          <li>Multiplayer network support</li>
+          <li>Custom board size options</li>
+          <li>Advanced animation system</li>
           <li>Game replay functionality</li>
-          <li>Advanced visual effects</li>
+          <li>Move suggestion system</li>
+          <li>Performance analytics tracking</li>
         </ul>`,
       additionalImages: [
-        'assets/images/connect4-gameplay.jpg',
-        'assets/images/connect4-ai-move.jpg'
+        ''
       ]
     },
     {
       id: 3,
       title: 'Earnings Call Analysis Tool',
-      mainImage: 'assets/images/earnings-analysis-main.jpg',
+      mainImage: '',
       overview: 'A sophisticated Python-based earnings call analyzer that processes earnings transcripts and provides comprehensive financial insights through natural language processing and AI, enabling automated analysis of earnings calls, extracting key financial metrics, strategic initiatives, and sentiment analysis.',
       githubLink: 'https://github.com/shivamratnani/StockEarningsReportAnalysis',
       isExpanded: false,
       detailedDescription: `
-        Built with Python and leveraging OpenAI's GPT-4, this tool automates the analysis of earnings call transcripts, providing deep insights into company performance and strategic direction.<br><br>
+        Built using Python and OpenAI's GPT-4, this tool provides automated analysis of earnings call transcripts with intelligent insights and sentiment evaluation.<br><br>
 
-        <strong>Key Features:</strong>
+        <strong>Key Technical Features:</strong>
         <ul>
-          <li>Automated PDF transcript processing and text extraction</li>
-          <li>Multiple analysis categories including financial results, strategic initiatives, and risks</li>
-          <li>Natural language processing for sentiment analysis</li>
-          <li>Integration with OpenAI's GPT-4 for advanced summarization</li>
-          <li>Customizable analysis categories and metrics tracking</li>
-          <li>Interactive command-line interface for analysis selection</li>
-          <li>Comprehensive report generation with key insights</li>
+          <li>GPT-4 powered text analysis</li>
+          <li>PDF transcript processing</li>
+          <li>Multi-category financial analysis</li>
+          <li>Sentiment evaluation system</li>
+          <li>Pattern-based metric extraction</li>
+          <li>Interactive command interface</li>
+          <li>Comprehensive report generation</li>
         </ul>
 
         <strong>Technical Implementation:</strong>
         <ul>
-          <li>Implemented PyPDF2 for robust PDF text extraction</li>
-          <li>Integrated OpenAI API for advanced text analysis</li>
-          <li>Built pattern matching system for financial data extraction</li>
-          <li>Developed modular analysis framework for different metrics</li>
-          <li>Created flexible reporting and output formatting system</li>
-          <li>Implemented sentiment analysis across multiple categories</li>
+          <li>Custom text preprocessing pipeline</li>
+          <li>Intelligent pattern recognition system</li>
+          <li>OpenAI API integration</li>
+          <li>Regular expression matching engine</li>
+          <li>Modular analysis framework</li>
+          <li>Structured output formatting</li>
+          <li>Error handling system</li>
         </ul>
 
         <strong>Development Challenges:</strong>
         <ul>
-          <li>Handling various PDF formats and structures</li>
-          <li>Implementing accurate pattern matching</li>
-          <li>Managing API rate limits and costs</li>
+          <li>Managing API rate limits</li>
           <li>Optimizing text processing efficiency</li>
-          <li>Building robust error handling systems</li>
+          <li>Implementing accurate pattern matching</li>
+          <li>Handling various PDF formats</li>
+          <li>Creating consistent analysis metrics</li>
+          <li>Ensuring accurate sentiment analysis</li>
+          <li>Building robust error recovery</li>
         </ul>
 
         <strong>Future Enhancements:</strong>
         <ul>
-          <li>Advanced visualization capabilities</li>
+          <li>Advanced visualization features</li>
           <li>Historical trend analysis</li>
-          <li>Comparative analysis across companies</li>
-          <li>Real-time transcript processing</li>
-          <li>Export functionality for different formats</li>
-          <li>Web-based user interface</li>
+          <li>Company comparison system</li>
+          <li>Real-time processing capability</li>
+          <li>Custom report templates</li>
+          <li>Interactive web interface</li>
+          <li>Data export functionality</li>
         </ul>`,
       additionalImages: [
-        'assets/images/earnings-analysis-results.jpg',
-        'assets/images/earnings-analysis-sentiment.jpg'
+        ''
       ]
     },
     {
       id: 4,
       title: 'Personal Portfolio Website',
-      mainImage: 'assets/images/portfolio-main.jpg',
+      mainImage: '',
       overview: 'A modern, interactive portfolio website built with Angular 17, featuring a responsive design, smooth animations, and dedicated sections for showcasing projects, photography, and professional experience. The website implements a unique star-field background animation and includes an integrated contact system.',
       githubLink: 'https://github.com/shivamratnani/ratnani_website',
       isExpanded: false,
       detailedDescription: `
-        Built using Angular 17 and modern web technologies, this portfolio website showcases my projects and professional experience through an engaging, interactive interface.<br><br>
+        Built using Angular 17 and modern web technologies, this portfolio website showcases technical expertise through an engaging, interactive interface.<br><br>
 
-        <strong>Key Features:</strong>
+        <strong>Key Technical Features:</strong>
         <ul>
-          <li>Responsive single-page application design</li>
-          <li>Interactive navigation with smooth scrolling</li>
-          <li>Dynamic star-field background animation</li>
-          <li>Section-based content organization</li>
-          <li>Project showcase with expandable details</li>
-          <li>Photography portfolio with gallery view</li>
-          <li>Interactive resume viewer with download option</li>
-          <li>Integrated contact form with email functionality</li>
+          <li>Angular 17 standalone components with TypeScript 5.2.2</li>
+          <li>Dynamic star-field animation with parallax scrolling</li>
+          <li>Intersection Observer API for precise scroll tracking</li>
+          <li>Custom animation system for UI elements</li>
+          <li>Mobile-responsive design with smooth transitions</li>
+          <li>Real-time form validation with error handling</li>
+          <li>Secure email system using Nodemailer</li>
         </ul>
 
         <strong>Technical Implementation:</strong>
         <ul>
-          <li>Built with Angular 17 standalone components</li>
-          <li>Implemented Intersection Observer for section tracking</li>
-          <li>Created custom animations using SCSS and Angular animations</li>
-          <li>Developed responsive layouts using CSS Grid and Flexbox</li>
-          <li>Integrated Node.js backend with Express for form handling</li>
-          <li>Implemented lazy loading for optimal performance</li>
+          <li>Custom IntersectionObserver for section tracking</li>
+          <li>Performance-optimized star animation system</li>
+          <li>Lazy loading implementation for component modules</li>
+          <li>Mobile-first approach with CSS Grid and Flexbox</li>
+          <li>Bundle size optimization through tree shaking</li>
+          <li>Secure backend integration with Express</li>
+          <li>Advanced state management using RxJS</li>
         </ul>
 
         <strong>Development Challenges:</strong>
         <ul>
+          <li>Optimizing star-field animation performance</li>
           <li>Implementing smooth section transitions</li>
-          <li>Creating responsive layouts for all screen sizes</li>
-          <li>Managing form state and validation</li>
-          <li>Optimizing performance and load times</li>
-          <li>Handling server-side email functionality</li>
+          <li>Creating responsive layouts for all devices</li>
+          <li>Managing complex component state</li>
+          <li>Optimizing bundle sizes and load times</li>
           <li>Ensuring cross-browser compatibility</li>
+          <li>Building secure email handling system</li>
         </ul>
 
         <strong>Future Enhancements:</strong>
         <ul>
-          <li>Blog section integration</li>
-          <li>Dark/Light theme toggle</li>
+          <li>Progressive Web App (PWA) implementation</li>
+          <li>Advanced dark/light theme system</li>
           <li>Multi-language support</li>
-          <li>Advanced animation effects</li>
-          <li>Project filtering system</li>
-          <li>Interactive timeline for experience</li>
+          <li>Dynamic blog system with markdown</li>
+          <li>Enhanced SEO optimization</li>
+          <li>Real-time chat functionality</li>
+          <li>Advanced analytics integration</li>
         </ul>`,
       additionalImages: [
-        'assets/images/portfolio-projects.jpg',
-        'assets/images/portfolio-photography.jpg'
+        ''
       ]
     }
   ];
