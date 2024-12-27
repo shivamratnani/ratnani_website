@@ -1,10 +1,12 @@
 .overview-container {
   min-height: 100vh;
-  padding: 80px 2rem 2rem;
+  padding: 120px 2rem 80px;
   background: linear-gradient(0deg, #550080 0%, #1a1a1a 100%);
   color: white;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
 
   &::before {
     content: '';
@@ -24,8 +26,8 @@
   grid-template-columns: 1fr 1fr;
   gap: 4rem;
   padding: 2rem;
-  height: calc(100vh - 120px);
   align-items: center;
+  height: auto;
 }
 
 .image-column {
@@ -88,15 +90,14 @@
 // Mobile styles
 @media (max-width: 768px) {
   .overview-container {
-    padding-top: 60px;
-    padding-bottom: 5rem;
+    padding: 100px 1rem 60px;
+    min-height: auto;
   }
 
   .content-grid {
     grid-template-columns: 1fr;
     gap: 2rem;
     padding: 1rem;
-    height: auto;
   }
 
   .image-placeholder {

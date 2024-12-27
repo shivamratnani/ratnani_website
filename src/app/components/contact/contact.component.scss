@@ -8,11 +8,17 @@
 .content-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 2rem;
-  min-height: 100vh;
+  padding: 120px 2rem 80px;
+  min-height: calc(100vh - 200px);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .content-container {
+    padding: 100px 1rem 60px;
+  }
 }
 
 h2 {
