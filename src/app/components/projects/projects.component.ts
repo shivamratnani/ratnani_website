@@ -17,11 +17,6 @@ interface Project {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="star-field">
-      @for (star of stars; track star) {
-        <div class="star-{{star}}"></div>
-      }
-    </div>
     <div class="content-container">
       <div class="projects-grid">
         <div class="project-card" *ngFor="let project of projects" [class.expanded]="project.isExpanded">
@@ -101,7 +96,6 @@ export class ProjectsComponent {
 
   selectedImage: string | null = null;
   showModal: boolean = false;
-  stars = Array.from({ length: 63 }, (_, i) => i + 1);
 
   toggleProject(project: Project) {
     project.isExpanded = !project.isExpanded;

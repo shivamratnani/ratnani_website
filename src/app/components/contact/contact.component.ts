@@ -16,11 +16,6 @@ interface ContactForm {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="star-field">
-      @for (star of stars; track star) {
-        <div class="star-{{star}}"></div>
-      }
-    </div>
     <div class="content-container">
       <div class="contact-wrapper">
         <div class="contact-info">
@@ -33,27 +28,58 @@ interface ContactForm {
           </div>
 
           <div class="social-links">
-            <a href="https://github.com/yourusername" target="_blank" class="social-link">
+            <a href="https://github.com/shivamratnani" target="_blank" class="social-link">
               <i class="bi bi-github"></i>
             </a>
-            <a href="https://linkedin.com/in/yourusername" target="_blank" class="social-link">
+            <a href="https://linkedin.com/in/shivamratnani" target="_blank" class="social-link">
               <i class="bi bi-linkedin"></i>
             </a>
           </div>
         </div>
 
-        <form class="contact-form" (submit)="onSubmit($event)">
+        <form class="contact-form" (ngSubmit)="onSubmit()" #contactForm="ngForm">
           <div class="form-row">
-            <input type="text" placeholder="Name" [(ngModel)]="formData.name" name="name">
-            <input type="email" placeholder="Email" [(ngModel)]="formData.email" name="email">
-            <input type="tel" placeholder="Phone" [(ngModel)]="formData.phone" name="phone">
+            <input
+              type="text"
+              placeholder="Name"
+              [(ngModel)]="formData.name"
+              name="name"
+              required>
+            <input
+              type="email"
+              placeholder="Email"
+              [(ngModel)]="formData.email"
+              name="email"
+              required
+              email>
+            <input
+              type="tel"
+              placeholder="Phone"
+              [(ngModel)]="formData.phone"
+              name="phone"
+              required>
           </div>
 
-          <input type="text" placeholder="Subject" [(ngModel)]="formData.subject" name="subject">
+          <input
+            type="text"
+            placeholder="Subject"
+            [(ngModel)]="formData.subject"
+            name="subject"
+            required>
 
-          <textarea placeholder="Message" [(ngModel)]="formData.message" name="message" rows="4"></textarea>
+          <textarea
+            placeholder="Message"
+            [(ngModel)]="formData.message"
+            name="message"
+            rows="4"
+            required></textarea>
 
-          <button type="submit" class="send-button">SEND</button>
+          <button
+            type="submit"
+            class="send-button"
+            [disabled]="!contactForm.form.valid">
+            SEND
+          </button>
         </form>
       </div>
     </div>
@@ -69,17 +95,27 @@ export class ContactComponent {
     message: ''
   };
 
-  stars = Array.from({ length: 63 }, (_, i) => i + 1);
-
   constructor(private http: HttpClient) {}
 
-  async onSubmit(event: Event) {
-    event.preventDefault();
-
+  async onSubmit() {
     try {
-      const response = await this.http.post('http://localhost:3000/api/send-email', this.formData).toPromise();
+      const emailBody = {
+        subject: this.formData.subject,
+        body: `
+Name: ${this.formData.name}
 
-      // Clear form and show success message
+Email: ${this.formData.email}
+
+Phone Number: ${this.formData.phone}
+
+Message:
+${this.formData.message}
+        `
+      };
+
+      const response = await this.http.post('http://localhost:3000/api/send-email', emailBody).toPromise();
+
+      // Reset form after successful submission
       this.formData = {
         name: '',
         email: '',
@@ -88,11 +124,10 @@ export class ContactComponent {
         message: ''
       };
 
-      alert("Message sent successfully!");
-
+      alert('Message sent successfully!');
     } catch (error) {
-      console.error("Failed to send message:", error);
-      alert("Failed to send message. Please try again.");
+      console.error('Failed to send message:', error);
+      alert('Failed to send message. Please try again.');
     }
   }
 }

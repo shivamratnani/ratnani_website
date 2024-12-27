@@ -3,78 +3,6 @@
   background: linear-gradient(180deg, #550080 0%, #1a1a1a 100%);
   position: relative;
   overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: transparent;
-    animation: twinkleBackground 8s linear infinite;
-  }
-}
-
-// Create multiple star layers for depth
-.star-field {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-@function random_range($min, $max) {
-  $rand: random();
-  $random_range: $min + floor($rand * (($max - $min) + 1));
-  @return $random_range;
-}
-
-@for $i from 1 through 63 {
-  .star-#{$i} {
-    $size: random(3) + px;
-    $twinkle_time: #{random_range(10, 30) / 10}s;
-    $float_time: #{random_range(10, 20) / 10}s;
-
-    position: absolute;
-    width: $size;
-    height: $size;
-    background: white;
-    border-radius: 50%;
-    top: random(100) + vh;
-    left: random(100) + vw;
-    opacity: 0;
-    animation:
-      twinkle $twinkle_time linear infinite,
-      float $float_time ease-in-out infinite;
-    animation-delay: #{random(3)}s;
-    box-shadow: 0 0 #{random(4) + 2}px rgba(255, 255, 255, 0.8);
-  }
-}
-
-@keyframes twinkle {
-  0%, 100% {
-    opacity: 0;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.2);
-  }
-}
-
-@keyframes float {
-  0% {
-    transform: translate(0, 0);
-  }
-  25% {
-    transform: translate(#{random(20) - 10}px, #{random(20) - 10}px);
-  }
-  50% {
-    transform: translate(#{random(15) - 7}px, #{random(15) - 7}px);
-  }
-  75% {
-    transform: translate(#{random(20) - 10}px, #{random(20) - 10}px);
-  }
-  100% {
-    transform: translate(0, 0);
-  }
 }
 
 .content-area {
@@ -107,58 +35,12 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.description {
-  font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.scroll-indicator {
-  position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  cursor: pointer;
-}
-
-.down-arrow {
-  width: 2rem;
-  height: 2rem;
-  transition: transform 0.3s ease;
-
-  &:hover {
-    transform: rotate(180deg);
-  }
-}
-
-@keyframes subtleBounce {
-  0%, 15%, 85%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-.scroll-indicator:hover .down-arrow {
-  animation: rotateAndBounce 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
 @keyframes rotateAndBounce {
   0%, 15%, 85%, 100% {
     transform: translateY(0) rotate(180deg);
   }
   50% {
     transform: translateY(-8px) rotate(180deg);
-  }
-}
-
-@keyframes backgroundMove {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(-50%, -50%);
   }
 }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -7,16 +7,11 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <div class="overview-container">
-      <div class="star-field">
-        @for (star of stars; track star) {
-          <div class="star-{{star}}"></div>
-        }
-      </div>
       <div class="content-grid">
         <!-- Left Column -->
         <div class="image-column">
           <div class="image-placeholder">
-            Insert picture of me here
+          <img src="assets/portrait.jpeg" alt="Portrait" />
           </div>
           <div class="social-icons">
             <span class="icon">•</span>
@@ -41,7 +36,7 @@ import { CommonModule } from '@angular/common';
             </div>
             <div class="editor-content">
               <p class="overview-text">
-                Insert Overview Here (Extend bottom section including attachments, emoji, and trash button to contain full text, make them functional. The attachments button should allow them to download my resume. The emojis button should show emojis, and the trash button should make a trash animation where small trash cans fall down the screen.)
+              As a Computer Science and Data Science double major at UW-Madison graduating in May 2025, I'm passionate about building scalable solutions at the intersection of software engineering and AI. Currently, I'm driving innovation as a Software Engineer Intern at Rightworks, where I enhance web applications for 300,000+ users, while also volunteering at Couillard Solar Foundation to develop renewable energy visualization platforms. My experience spans full-stack development, cloud applications, and AI/ML, with expertise in technologies like React, AngularJS, Node.js, and various cloud platforms. Through projects like developing a stock volatility analyzer and implementing AI algorithms for game development, I continually push the boundaries of what's possible in technology. I'm always eager to connect with fellow technologists and innovators who share my passion for creating impactful solutions through code.
               </p>
             </div>
             <div class="editor-actions">
@@ -74,8 +69,7 @@ import { CommonModule } from '@angular/common';
   `,
   styleUrls: ['./overview.component.scss']
 })
-export class OverviewComponent implements OnInit {
-  stars: number[] = [];
+export class OverviewComponent {
   isTrashAnimating = false;
   isEmojiAnimating = false;
   fallingItems: Array<{x: number, delay: number, content: string, rotation: number}> = [];
@@ -83,14 +77,10 @@ export class OverviewComponent implements OnInit {
   private emojis = ['😊', '😂', '🥳', '😎', '🤩', '😄', '🥰', '😋', '🤪', '😇',
                     '🌟', '✨', '💫', '⭐', '🎈', '🎉', '🎊', '💝', '💖', '💕'];
 
-  ngOnInit() {
-    this.stars = Array.from({length: 50}, (_, i) => i + 1);
-  }
-
   downloadResume() {
     const link = document.createElement('a');
-    link.href = 'assets/resume.pdf';
-    link.download = 'resume.pdf';
+    link.href = 'assets/Shivam Ratnani - Resume.pdf';
+    link.download = 'Shivam_Ratnani_Resume.pdf';
     link.click();
   }
 

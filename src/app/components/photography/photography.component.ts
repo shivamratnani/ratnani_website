@@ -12,11 +12,6 @@ interface Photo {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="star-field">
-      @for (star of stars; track star) {
-        <div class="star-{{star}}"></div>
-      }
-    </div>
     <div class="content-container">
       <div class="photo-grid">
         <div class="photo-card"
@@ -50,7 +45,6 @@ export class PhotographyComponent {
   ];
 
   selectedPhoto: Photo | null = null;
-  stars = Array.from({ length: 63 }, (_, i) => i + 1);
 
   togglePhoto(photo: Photo) {
     this.selectedPhoto = this.selectedPhoto === photo ? null : photo;
