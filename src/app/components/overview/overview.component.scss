@@ -17,6 +17,15 @@
   }
 }
 
+.overview-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .content-grid {
   position: relative;
   z-index: 1;
@@ -229,4 +238,12 @@
 
 .action-btn .icon {
   filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+}
+
+h2 {
+  text-align: center;
+  color: #949eff;
+  margin-bottom: 3rem;
+  font-size: 2.5rem;
+  width: 100%;
 }

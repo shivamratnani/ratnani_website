@@ -13,6 +13,7 @@ interface Photo {
   imports: [CommonModule],
   template: `
     <div class="content-container">
+      <h2>Photography</h2>
       <div class="photo-grid">
         <div class="photo-card"
              *ngFor="let photo of photos"
@@ -37,11 +38,21 @@ interface Photo {
 })
 export class PhotographyComponent {
   photos: Photo[] = [
-    { id: 1, src: 'assets/photos/photo1.jpg', alt: 'Photo 1' },
-    { id: 2, src: 'assets/photos/photo2.jpg', alt: 'Photo 2' },
-    { id: 3, src: 'assets/photos/photo3.jpg', alt: 'Photo 3' },
-    { id: 4, src: 'assets/photos/photo4.jpg', alt: 'Photo 4' },
-    // Add more photos as needed
+    { id: 1, src: 'assets/photography_images/1.jpg', alt: 'Photo 1' },
+    { id: 2, src: 'assets/photography_images/2.jpg', alt: 'Photo 2' },
+    { id: 3, src: 'assets/photography_images/3.jpg', alt: 'Photo 3' },
+    { id: 4, src: 'assets/photography_images/4.jpg', alt: 'Photo 4' },
+    { id: 5, src: 'assets/photography_images/5.jpg', alt: 'Photo 5' },
+    { id: 6, src: 'assets/photography_images/6.jpg', alt: 'Photo 6' },
+    { id: 7, src: 'assets/photography_images/7.jpg', alt: 'Photo 7' },
+    { id: 8, src: 'assets/photography_images/8.jpg', alt: 'Photo 8' },
+    { id: 9, src: 'assets/photography_images/9.jpg', alt: 'Photo 9' },
+    { id: 10, src: 'assets/photography_images/10.jpg', alt: 'Photo 10' },
+    { id: 11, src: 'assets/photography_images/11.jpg', alt: 'Photo 11' },
+    { id: 12, src: 'assets/photography_images/12.jpg', alt: 'Photo 12' },
+    { id: 13, src: 'assets/photography_images/13.jpg', alt: 'Photo 13' },
+    { id: 14, src: 'assets/photography_images/14.jpg', alt: 'Photo 14' },
+
   ];
 
   selectedPhoto: Photo | null = null;
