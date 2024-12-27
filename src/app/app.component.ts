@@ -20,6 +20,12 @@ import { ContactComponent } from './components/contact/contact.component';
     ContactComponent
   ],
   template: `
+    <div class="stars">
+      @for (star of stars; track $index) {
+        <div class="star-{{$index + 1}}"></div>
+      }
+    </div>
+
     <nav class="navigation">
       <div class="nav-content">
         @for (tab of tabs; track tab.name) {
@@ -70,6 +76,8 @@ export class AppComponent implements AfterViewInit {
 
   activeSection = 'main';
   title = 'ratnani_website';
+  stars = Array(100).fill(0);
+  isMobileMenuOpen = false;
 
   ngAfterViewInit() {
     if (typeof window !== 'undefined') {
@@ -91,5 +99,13 @@ export class AppComponent implements AfterViewInit {
     if (typeof window !== 'undefined') {
       document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     }
+  }
+
+  toggleMobileMenu() {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
+  closeMobileMenu() {
+    this.isMobileMenuOpen = false;
   }
 }

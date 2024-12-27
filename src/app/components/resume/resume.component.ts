@@ -6,11 +6,6 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="star-field">
-      @for (star of stars; track star) {
-        <div class="star-{{star}}"></div>
-      }
-    </div>
     <div class="content-container">
       <div class="resume-wrapper">
         <iframe
@@ -28,6 +23,4 @@ import { CommonModule } from '@angular/common';
   `,
   styleUrls: ['./resume.component.scss']
 })
-export class ResumeComponent {
-  stars = Array.from({ length: 63 }, (_, i) => i + 1);
-}
+export class ResumeComponent {}

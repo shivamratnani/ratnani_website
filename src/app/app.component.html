@@ -1,1 +1,50 @@
-<app-projects></app-projects>
+template: `
+  <div class="stars">
+    @for (star of stars; track $index) {
+      <div class="star-{{$index + 1}}"></div>
+    }
+  </div>
+
+  <nav class="navigation">
+    <div class="nav-content">
+      <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+        <i class="bi bi-list"></i>
+      </button>
+      <div class="nav-items" [class.mobile-menu-open]="isMobileMenuOpen">
+        @for (tab of tabs; track tab.name) {
+          <a (click)="scrollToSection(tab.id); closeMobileMenu()"
+             class="nav-item"
+             [class.active]="activeSection === tab.id">
+            {{tab.name}}
+          </a>
+        }
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section id="main" class="section">
+      <app-main></app-main>
+    </section>
+
+    <section id="overview" class="section">
+      <app-overview></app-overview>
+    </section>
+
+    <section id="projects" class="section">
+      <app-projects></app-projects>
+    </section>
+
+    <section id="photography" class="section">
+      <app-photography></app-photography>
+    </section>
+
+    <section id="resume" class="section">
+      <app-resume></app-resume>
+    </section>
+
+    <section id="contact" class="section">
+      <app-contact></app-contact>
+    </section>
+  </main>
+`
