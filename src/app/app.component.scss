@@ -1,7 +1,8 @@
 :host {
   display: block;
-  height: 100vh;
-  overflow-y: auto;
+  height: auto;
+  min-height: 100vh;
+  overflow-y: visible;
   position: relative;
 }
 
@@ -170,7 +171,7 @@
 }
 
 .section {
-  height: 100vh;
+  min-height: 100vh;
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
