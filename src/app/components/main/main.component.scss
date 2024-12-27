@@ -3,15 +3,16 @@
   background: linear-gradient(180deg, #550080 0%, #1a1a1a 100%);
   position: relative;
   overflow: hidden;
+  padding: 80px 0;
 }
 
 .content-area {
   position: relative;
   z-index: 1;
-  min-height: 100vh;
+  min-height: calc(100vh - 160px);
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
   padding: 2rem;
 }
 

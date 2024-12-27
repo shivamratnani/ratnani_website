@@ -28,11 +28,18 @@ import { ContactComponent } from './components/contact/contact.component';
 
     <nav class="navigation">
       <div class="nav-content">
-        @for (tab of tabs; track tab.name) {
-          <a (click)="scrollToSection(tab.id)" class="nav-item" [class.active]="activeSection === tab.id">
-            {{tab.name}}
-          </a>
-        }
+        <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+          <i class="bi bi-list"></i>
+        </button>
+        <div class="nav-items" [class.mobile-menu-open]="isMobileMenuOpen">
+          @for (tab of tabs; track tab.name) {
+            <a (click)="scrollToSection(tab.id); closeMobileMenu()"
+               class="nav-item"
+               [class.active]="activeSection === tab.id">
+              {{tab.name}}
+            </a>
+          }
+        </div>
       </div>
     </nav>
 

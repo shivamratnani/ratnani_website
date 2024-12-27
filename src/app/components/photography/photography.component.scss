@@ -16,11 +16,8 @@
 .content-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 2rem;
+  padding: 120px 2rem 80px;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 h2 {
@@ -31,11 +28,11 @@ h2 {
 }
 
 .photo-grid {
-  width: 100%;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 2rem;
-  align-items: start;
+  padding: 2rem 0;
+  min-height: calc(100vh - 200px);
 }
 
 .photo-card {
@@ -125,9 +122,14 @@ h2 {
 }
 
 @media (max-width: 768px) {
+  .content-container {
+    padding: 100px 1rem 60px;
+  }
+
   .photo-grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 1rem;
+    padding: 1rem 0;
   }
 
   .photo-overlay {
