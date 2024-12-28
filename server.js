@@ -29,20 +29,16 @@ app.use('/api/send-email', limiter);
 
 // Email sending endpoint
 app.post('/api/send-email', async (req, res) => {
-  const { subject, body } = req.body;
+  const { name, email, phone, subject, message } = req.body;
 
-  if (!subject || !body) {
-    return res.status(400).json({ message: 'Missing required fields' });
-  }
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: 'shiv@ratnani.org',
+    subject: subject,
+    text: message
+  };
 
   try {
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER, // Send to yourself
-      subject: subject,
-      text: body
-    };
-
     await transporter.sendMail(mailOptions);
     res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {
