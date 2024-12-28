@@ -9,6 +9,7 @@ interface ContactForm {
   phone: string;
   subject: string;
   message: string;
+  access_key: string;
 }
 
 @Component({
@@ -76,12 +77,15 @@ interface ContactForm {
               rows="4"
               required></textarea>
 
-            <button
-              type="submit"
-              class="send-button"
-              [disabled]="!contactForm.form.valid">
-              SEND
-            </button>
+            <div class="submit-section">
+              <button
+                type="submit"
+                class="send-button"
+                [disabled]="!contactForm.form.valid || isSubmitting">
+                {{ isSubmitting ? 'SENDING...' : 'SEND' }}
+              </button>
+              <div class="result-message" *ngIf="resultMessage">{{ resultMessage }}</div>
+            </div>
           </form>
         </div>
       </div>
@@ -90,47 +94,52 @@ interface ContactForm {
   styleUrls: ['./contact.component.scss']
 })
 export class ContactComponent {
+  isSubmitting = false;
+  resultMessage = '';
+
   formData: ContactForm = {
     name: '',
     email: '',
     phone: '',
     subject: '',
-    message: ''
+    message: '',
+    access_key: 'a453ef2c-a49d-4966-99be-6e0d2e27ce1f'
   };
 
   constructor(private http: HttpClient) {}
 
   async onSubmit() {
+    this.isSubmitting = true;
+    this.resultMessage = 'Please wait...';
+
     try {
-      const emailBody = {
-        subject: this.formData.subject,
-        body: `
-Name: ${this.formData.name}
+      const response = await this.http.post('https://api.web3forms.com/submit', this.formData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }).toPromise();
 
-Email: ${this.formData.email}
+      this.resultMessage = 'Message sent successfully!';
 
-Phone Number: ${this.formData.phone}
-
-Message:
-${this.formData.message}
-        `
-      };
-
-      const response = await this.http.post('http://localhost:3000/api/send-email', emailBody).toPromise();
-
-      // Reset form after successful submission
+      // Reset form
       this.formData = {
         name: '',
         email: '',
         phone: '',
         subject: '',
-        message: ''
+        message: '',
+        access_key: 'a453ef2c-a49d-4966-99be-6e0d2e27ce1f'
       };
 
-      alert('Message sent successfully!');
     } catch (error) {
       console.error('Failed to send message:', error);
-      alert('Failed to send message. Please try again.');
+      this.resultMessage = 'Something went wrong! Please try again.';
+    } finally {
+      this.isSubmitting = false;
+      setTimeout(() => {
+        this.resultMessage = '';
+      }, 3000);
     }
   }
 }
