@@ -85,6 +85,7 @@
   font-size: 1.1rem;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.9);
+  text-align: left;
 }
 
 @keyframes backgroundMove {
@@ -195,7 +196,7 @@
   inset: 0;
   pointer-events: none;
   z-index: 1000;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .falling-item {
