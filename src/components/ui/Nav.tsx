@@ -75,9 +75,6 @@ export function Nav() {
           aria-label={`${site.name} — home`}
         >
           <Logo className="h-7 w-auto text-ash-2 transition-colors duration-300 group-hover:text-ash-3 sm:h-8" />
-          <span className="rule-sweep font-medium text-ash-2 text-sm tracking-tight transition-colors duration-300 group-hover:text-ash-3 group-hover:[background-size:100%_1px]">
-            {site.name}
-          </span>
         </Link>
 
         <ul className="hidden items-center gap-1 md:flex">
