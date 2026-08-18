@@ -143,3 +143,10 @@
     opacity: 0;
   }
 }
+
+/* Logo shards: circles drawn at the origin and placed by transform, so one
+ * property carries both the flight and the growth from cluster to scene. */
+.logo-shard {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
