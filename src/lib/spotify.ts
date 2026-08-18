@@ -147,11 +147,17 @@ async function artistImages(ids: string[], token: string): Promise<Map<string, s
   const images = new Map<string, string>();
   if (ids.length === 0) return images;
 
-  const payload = await api(`/artists?ids=${ids.slice(0, 50).join(",")}`, token);
-  for (const artist of artistsSchema.parse(payload).artists) {
-    // Smallest image on offer — these render at 36px.
-    const url = artist?.images.at(-1)?.url;
-    if (artist && url) images.set(artist.id, url);
+  try {
+    const payload = await api(`/artists?ids=${ids.slice(0, 50).join(",")}`, token);
+    for (const artist of artistsSchema.parse(payload).artists) {
+      // Smallest image on offer — these render at 36px.
+      const url = artist?.images.at(-1)?.url;
+      if (artist && url) images.set(artist.id, url);
+    }
+  } catch (error) {
+    // Portraits are a nicety and this endpoint currently answers 403 for this
+    // token. Never let it fail the ingest — callers fall back to album art.
+    console.warn("[spotify] artist portraits unavailable:", error);
   }
   return images;
 }
@@ -279,7 +285,9 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
                 id: artist.id,
                 name: artist.name,
                 url: artist.external_urls.spotify,
-                art: null,
+                // Cover of a track they appear on, replaced by a real portrait
+                // below when Spotify serves one. Better than a blank square.
+                art: track.album.images.at(-1)?.url ?? null,
               }
             : null,
       },
@@ -291,7 +299,8 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
   const wanted = new Set(events.flatMap((event) => (event.artist ? [event.artist.id] : [])));
   const images = await artistImages([...wanted], token);
   for (const event of events) {
-    if (event.artist) event.artist.art = images.get(event.artist.id) ?? null;
+    // Keep the album-art fallback when no portrait came back.
+    if (event.artist) event.artist.art = images.get(event.artist.id) ?? event.artist.art;
   }
 
   const { newest, days } = foldPlays(events, cursor ?? 0);
@@ -406,17 +415,28 @@ async function readWindow(days: number, limit: number): Promise<SpotifyWeek> {
 
 const nowPlayingSchema = z.object({
   is_playing: z.boolean(),
+  progress_ms: z.number().nullable().optional(),
   item: z
     .object({
       name: z.string(),
+      duration_ms: z.number().optional(),
       external_urls: z.object({ spotify: z.string() }),
-      album: z.object({ images: imageSchema }),
+      album: z.object({ name: z.string(), images: imageSchema }),
       artists: z.array(z.object({ name: z.string() })).min(1),
     })
     .nullable(),
 });
 
-export type NowPlaying = { name: string; artist: string; url: string; art: string | null } | null;
+export type NowPlaying = {
+  name: string;
+  artist: string;
+  album: string;
+  url: string;
+  art: string | null;
+  /** Both in ms, for the progress bar. Null when Spotify omits them. */
+  progressMs: number | null;
+  durationMs: number | null;
+} | null;
 
 /** Currently playing track, or null when nothing is. Never cached. */
 export async function getNowPlaying(): Promise<NowPlaying> {
@@ -430,7 +450,11 @@ export async function getNowPlaying(): Promise<NowPlaying> {
   return {
     name: item.name,
     artist: item.artists.map((a) => a.name).join(", "),
+    album: item.album.name,
     url: item.external_urls.spotify,
-    art: item.album.images.at(-1)?.url ?? null,
+    // First image, not last: this one is rendered large enough to want it.
+    art: item.album.images.at(0)?.url ?? null,
+    progressMs: parsed.data.progress_ms ?? null,
+    durationMs: item.duration_ms ?? null,
   };
 }
