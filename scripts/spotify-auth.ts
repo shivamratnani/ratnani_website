@@ -18,7 +18,15 @@ import { readEnvFile, upsertEnvFile } from "../src/lib/dotenv.ts";
 
 const PORT = 8888;
 const REDIRECT_URI = `http://127.0.0.1:${PORT}/callback`;
-const SCOPES = ["user-read-recently-played", "user-read-currently-playing", "user-top-read"];
+const SCOPES = [
+  "user-read-recently-played",
+  "user-read-currently-playing",
+  "user-top-read",
+  // Reading your own playlists needs this even for public ones. Tokens minted
+  // before it was added return nothing, so the Playlists column stays empty
+  // until this script is re-run and the new refresh token pushed.
+  "playlist-read-private",
+];
 const ENV_PATH = join(process.cwd(), ".env.local");
 
 const env = await readEnvFile(ENV_PATH);
