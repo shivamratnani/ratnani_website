@@ -10,7 +10,7 @@ import { MEASURE } from "@/components/ui/layout";
 import { Section } from "@/components/ui/Section";
 import { TimeAgo } from "@/components/ui/TimeAgo";
 import { cn } from "@/lib/cn";
-import { getNowPlaying, getPlaylists, getSpotifySeason, getSpotifyWeek } from "@/lib/spotify";
+import { getNowPlaying, getSpotifySeason, getSpotifyWeek } from "@/lib/spotify";
 
 export const metadata: Metadata = {
   title: "Now",
@@ -24,7 +24,7 @@ function ListeningFallback() {
 /** The /now page is the full view, so it lists deeper than the home panel. */
 const LISTED = 10;
 
-async function Listening({ playlists }: { playlists: React.ReactNode }) {
+async function Listening() {
   // Request-time island — see the note in app/page.tsx.
   await connection();
   // Both windows read the same per-day keys, so this is two aggregations over
@@ -52,7 +52,10 @@ async function Listening({ playlists }: { playlists: React.ReactNode }) {
           <TopList title="Top artists · 4 weeks" entries={season.artists} />
         </div>
 
-        <div className="sm:col-span-2 xl:col-span-1">{playlists}</div>
+        <div className="space-y-12 sm:col-span-2 xl:col-span-1">
+          <Playlists title="Playlists · 7 days" playlists={week.playlists} />
+          <Playlists title="Playlists · 4 weeks" playlists={season.playlists} />
+        </div>
       </div>
 
       <p className="font-mono text-[11px] text-ash-1">
@@ -61,15 +64,6 @@ async function Listening({ playlists }: { playlists: React.ReactNode }) {
       </p>
     </div>
   );
-}
-
-function PlaylistsFallback() {
-  return <div className="h-24 animate-pulse rounded-lg bg-ink-1" />;
-}
-
-async function PlaylistShelf() {
-  await connection();
-  return <Playlists playlists={await getPlaylists()} />;
 }
 
 async function Ticker() {
@@ -94,13 +88,7 @@ export default function NowPage() {
 
       <Section id="listening" index="—" title="Listening">
         <Suspense fallback={<ListeningFallback />}>
-          <Listening
-            playlists={
-              <Suspense fallback={<PlaylistsFallback />}>
-                <PlaylistShelf />
-              </Suspense>
-            }
-          />
+          <Listening />
         </Suspense>
       </Section>
     </>

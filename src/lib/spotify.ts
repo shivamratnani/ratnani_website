@@ -21,9 +21,12 @@ const TTL_SECONDS = RETENTION_DAYS * 24 * 60 * 60;
 const KEY = {
   trackPlays: (day: string) => `plays:track:${day}`,
   artistPlays: (day: string) => `plays:artist:${day}`,
+  playlistPlays: (day: string) => `plays:playlist:${day}`,
   trackMeta: "meta:track",
   artistMeta: "meta:artist",
+  playlistMeta: "meta:playlist",
   cursor: "sync:cursor",
+  playlistBackfill: "sync:playlists-backfilled",
   syncedAt: "sync:at",
 } as const;
 
@@ -34,6 +37,8 @@ export type Ranked<T> = T & { plays: number };
 export type SpotifyWeek = {
   tracks: Ranked<Track>[];
   artists: Ranked<Artist>[];
+  /** Only playlists in my own library — see `ownPlaylists`. */
+  playlists: Ranked<Playlist>[];
   /** Epoch ms of the last successful sync, or null if it has never run. */
   syncedAt: number | null;
 };
@@ -103,6 +108,9 @@ const recentSchema = z.object({
   items: z.array(
     z.object({
       played_at: z.string(),
+      // What the track was played from. Absent when it came from search or a
+      // bare album, and `type` is only "playlist" for the plays we rank.
+      context: z.object({ type: z.string(), uri: z.string() }).nullish(),
       track: z.object({
         id: z.string().nullable(),
         name: z.string(),
@@ -206,7 +214,22 @@ export type PlayEvent = {
   playedAt: number;
   track: Track;
   artist: Artist | null;
+  /** Id of the playlist it was played from, or null — see `playlistId`. */
+  playlist: string | null;
 };
+
+/**
+ * Pure: the playlist id inside a play's context, or null when the play did not
+ * come from one. Spotify sends `spotify:playlist:<id>`; anything else — an
+ * album, an artist page, a bare search — is not a playlist play.
+ */
+export function playlistId(
+  context: { type: string; uri: string } | null | undefined,
+): string | null {
+  if (context?.type !== "playlist") return null;
+  const id = context.uri.split(":").at(-1);
+  return id && id.length > 0 ? id : null;
+}
 
 /**
  * Pure fold: selects plays strictly newer than the cursor and buckets them by
@@ -253,6 +276,54 @@ export function topN(totals: Map<string, number>, limit: number): [string, numbe
 }
 
 /**
+ * Seeds playlist counts from history the cursor has already passed.
+ *
+ * Playlist attribution shipped after track and artist ranking, so on the first
+ * sync afterwards the cursor already sits past every play Spotify still holds
+ * and the ranked list would start empty. This folds in only plays at or below
+ * the cursor — precisely the ones the main ingest skips — so the two cannot
+ * both count the same play. A marker key makes it run exactly once.
+ */
+async function backfillPlaylistPlays(
+  db: Redis,
+  token: string,
+  mine: Map<string, Playlist>,
+  cursor: number,
+): Promise<number> {
+  if (cursor === 0 || (await db.get(KEY.playlistBackfill))) return 0;
+
+  let seeded = 0;
+  try {
+    const payload = await api("/me/player/recently-played?limit=50", token);
+    const pipeline = db.pipeline();
+    const days = new Set<string>();
+
+    for (const item of recentSchema.parse(payload).items) {
+      const playedAt = Date.parse(item.played_at);
+      // Above the cursor is the main ingest's territory; leave it alone.
+      if (playedAt > cursor) continue;
+      const from = playlistId(item.context);
+      if (!from || !mine.has(from)) continue;
+
+      const day = dayKey(playedAt);
+      pipeline.zincrby(KEY.playlistPlays(day), 1, from);
+      days.add(day);
+      seeded += 1;
+    }
+
+    for (const day of days) pipeline.expire(KEY.playlistPlays(day), TTL_SECONDS);
+    pipeline.set(KEY.playlistBackfill, Date.now());
+    await pipeline.exec();
+  } catch (error) {
+    // Never fail the sync over a one-time nicety; the marker stays unset so the
+    // next run retries.
+    console.warn("[spotify] playlist backfill skipped:", error);
+    return 0;
+  }
+  return seeded;
+}
+
+/**
  * Pulls plays since the stored cursor and folds them into per-day sorted sets.
  *
  * Idempotent: the `after` cursor advances to the newest `played_at` seen, so a
@@ -272,6 +343,15 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
 
   await backfillArtistArt(db, token);
 
+  // Refreshed every sync, not just when something was played: it is one request
+  // we make anyway, and it keeps names, art and counts current for the whole
+  // reporting window rather than freezing them at the moment of first play.
+  const mine = await ownPlaylists(token);
+  if (mine.size > 0) {
+    await db.hset(KEY.playlistMeta, Object.fromEntries(mine));
+    await backfillPlaylistPlays(db, token, mine, cursor ?? 0);
+  }
+
   if (items.length === 0) {
     await db.set(KEY.syncedAt, now);
     return { ingested: 0 };
@@ -281,9 +361,14 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
     const { track } = item;
     const artist = track.artists[0];
     if (!track.id) return [];
+    // Only playlists in my own library are kept. Spotify's algorithmic mixes
+    // (37i9dQZF1E...) are the bulk of the contexts, and /playlists/{id} answers
+    // 404 for them, so they could never be rendered with a name or cover.
+    const from = playlistId(item.context);
     return [
       {
         playedAt: Date.parse(item.played_at),
+        playlist: from && mine.has(from) ? from : null,
         track: {
           id: track.id,
           name: track.name,
@@ -329,9 +414,14 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
         pipeline.zincrby(KEY.artistPlays(day), 1, play.artist.id);
         pipeline.hset(KEY.artistMeta, { [play.artist.id]: play.artist });
       }
+
+      // Meta was written above from the freshly-fetched library, so this only
+      // needs the count.
+      if (play.playlist) pipeline.zincrby(KEY.playlistPlays(day), 1, play.playlist);
     }
     pipeline.expire(KEY.trackPlays(day), TTL_SECONDS);
     pipeline.expire(KEY.artistPlays(day), TTL_SECONDS);
+    pipeline.expire(KEY.playlistPlays(day), TTL_SECONDS);
   }
 
   pipeline.set(KEY.cursor, newest);
@@ -374,7 +464,7 @@ async function hydrate<T extends { id: string }>(
     .filter((entry): entry is Ranked<T> => entry !== null);
 }
 
-const EMPTY_WEEK: SpotifyWeek = { tracks: [], artists: [], syncedAt: null };
+const EMPTY_WEEK: SpotifyWeek = { tracks: [], artists: [], playlists: [], syncedAt: null };
 
 /**
  * The rolling 7-day window, or an empty week if Redis is unreachable.
@@ -409,18 +499,20 @@ async function readWindow(days: number, limit: number): Promise<SpotifyWeek> {
   // the promises already built by the earlier arguments unhandled.
   const db = redis();
   const window = windowDays(Date.now(), days);
-  const [trackTotals, artistTotals, syncedAt] = await Promise.all([
+  const [trackTotals, artistTotals, playlistTotals, syncedAt] = await Promise.all([
     rank(db, KEY.trackPlays, window),
     rank(db, KEY.artistPlays, window),
+    rank(db, KEY.playlistPlays, window),
     db.get<number>(KEY.syncedAt),
   ]);
 
-  const [tracks, artists] = await Promise.all([
+  const [tracks, artists, playlists] = await Promise.all([
     hydrate<Track>(db, KEY.trackMeta, trackTotals, limit),
     hydrate<Artist>(db, KEY.artistMeta, artistTotals, limit),
+    hydrate<Playlist>(db, KEY.playlistMeta, playlistTotals, limit),
   ]);
 
-  return { tracks, artists, syncedAt: syncedAt ?? null };
+  return { tracks, artists, playlists, syncedAt: syncedAt ?? null };
 }
 
 // --- now playing ------------------------------------------------------------
@@ -473,13 +565,18 @@ export type Playlist = {
 };
 
 /**
- * Public playlists, newest first. Returns an empty list rather than throwing:
- * this needs `playlist-read-private`, which the stored refresh token may predate,
- * and a missing scope should hide the section rather than break the page.
+ * My own public playlists, by id. This is both the metadata source for the
+ * ranked list and the filter that defines it: a play only counts if its
+ * playlist is in here, so private playlists, playlists I merely follow, and
+ * Spotify's own mixes never reach the page.
+ *
+ * Returns an empty map rather than throwing — this needs `playlist-read-private`,
+ * which the stored refresh token may predate, and a missing scope should empty
+ * the section rather than fail the sync.
  */
-export async function getPlaylists(limit = 8): Promise<Playlist[]> {
+async function ownPlaylists(token: string): Promise<Map<string, Playlist>> {
+  const playlists = new Map<string, Playlist>();
   try {
-    const token = await accessToken();
     // /me/playlists returns followed playlists alongside your own, so the owner
     // is needed to keep this to playlists you actually made.
     const [me, payload] = await Promise.all([
@@ -488,26 +585,21 @@ export async function getPlaylists(limit = 8): Promise<Playlist[]> {
     ]);
     const mine = meSchema.safeParse(me);
 
-    return playlistsSchema
-      .parse(payload)
-      .items.flatMap((item) => {
-        if (!item || item.public === false) return [];
-        if (mine.success && item.owner && item.owner.id !== mine.data.id) return [];
-        return [
-          {
-            id: item.id,
-            name: item.name,
-            url: item.external_urls.spotify,
-            art: item.images?.at(0)?.url ?? null,
-            tracks: item.items?.total ?? item.tracks?.total ?? 0,
-          },
-        ];
-      })
-      .slice(0, limit);
+    for (const item of playlistsSchema.parse(payload).items) {
+      if (!item || item.public === false) continue;
+      if (mine.success && item.owner && item.owner.id !== mine.data.id) continue;
+      playlists.set(item.id, {
+        id: item.id,
+        name: item.name,
+        url: item.external_urls.spotify,
+        art: item.images?.at(0)?.url ?? null,
+        tracks: item.items?.total ?? item.tracks?.total ?? 0,
+      });
+    }
   } catch (error) {
     console.warn("[spotify] playlists unavailable:", error);
-    return [];
   }
+  return playlists;
 }
 
 export type NowPlaying = {
