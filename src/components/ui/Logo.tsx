@@ -40,9 +40,15 @@ const FILL_SPREAD = 600;
 /** The fill layer's fade, in and out. Out is quick so the shards leave last. */
 const FILL_FADE = 300;
 
-/** The scene's tonal palette — the picture, in the site's own colours. */
+/**
+ * The scene's tonal palette. Wings, feathers, clouds and sun stay on the
+ * site's tokens; the body's two browns are scene-local skin tones — the one
+ * place the site earns a colour outside its palette.
+ */
 const TONE_COLOR: Record<Tone, string> = {
-  figure: "var(--color-ash-3)",
+  wing: "var(--color-ash-3)",
+  body: "#a18468",
+  face: "#d2ab84",
   feather: "var(--color-ash-2)",
   cloud: "var(--color-ash-1)",
   sun: "var(--color-red)",
