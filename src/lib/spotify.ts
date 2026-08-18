@@ -1,3 +1,4 @@
+import type { Redis } from "@upstash/redis";
 import { cacheLife } from "next/cache";
 import { z } from "zod";
 import { requireEnv } from "./env";
@@ -253,8 +254,11 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
 // --- read -------------------------------------------------------------------
 
 /** Sums play counts for one entity type across the window's day keys. */
-async function rank(keyFor: (day: string) => string, days: string[]): Promise<Map<string, number>> {
-  const db = redis();
+async function rank(
+  db: Redis,
+  keyFor: (day: string) => string,
+  days: string[],
+): Promise<Map<string, number>> {
   const pipeline = db.pipeline();
   for (const day of days) pipeline.zrange(keyFor(day), 0, -1, { withScores: true });
   return mergeScores((await pipeline.exec()) as (string | number)[][]);
@@ -262,6 +266,7 @@ async function rank(keyFor: (day: string) => string, days: string[]): Promise<Ma
 
 /** Attaches stored metadata to ranked ids, dropping any that lost their entry. */
 async function hydrate<T extends { id: string }>(
+  db: Redis,
   metaKey: string,
   totals: Map<string, number>,
   limit: number,
@@ -269,7 +274,7 @@ async function hydrate<T extends { id: string }>(
   const top = topN(totals, limit);
   if (top.length === 0) return [];
 
-  const meta = await redis().hmget<Record<string, T>>(metaKey, ...top.map(([id]) => id));
+  const meta = await db.hmget<Record<string, T>>(metaKey, ...top.map(([id]) => id));
 
   return top
     .map(([id, plays]) => {
@@ -300,16 +305,20 @@ async function readWeek(limit: number): Promise<SpotifyWeek> {
   "use cache";
   cacheLife("minutes");
 
+  // Resolved once, before any promise exists: redis() throws when the Upstash
+  // config is missing, and throwing between Promise.all's arguments would leave
+  // the promises already built by the earlier arguments unhandled.
+  const db = redis();
   const days = windowDays(Date.now());
   const [trackTotals, artistTotals, syncedAt] = await Promise.all([
-    rank(KEY.trackPlays, days),
-    rank(KEY.artistPlays, days),
-    redis().get<number>(KEY.syncedAt),
+    rank(db, KEY.trackPlays, days),
+    rank(db, KEY.artistPlays, days),
+    db.get<number>(KEY.syncedAt),
   ]);
 
   const [tracks, artists] = await Promise.all([
-    hydrate<Track>(KEY.trackMeta, trackTotals, limit),
-    hydrate<Artist>(KEY.artistMeta, artistTotals, limit),
+    hydrate<Track>(db, KEY.trackMeta, trackTotals, limit),
+    hydrate<Artist>(db, KEY.artistMeta, artistTotals, limit),
   ]);
 
   return { tracks, artists, syncedAt: syncedAt ?? null };

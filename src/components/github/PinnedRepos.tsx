@@ -7,7 +7,7 @@ export function PinnedRepos({ repos }: { repos: GitHubTracker["repos"] }) {
   if (repos.length === 0) return null;
 
   return (
-    <Stagger className="grid gap-3 sm:grid-cols-2">
+    <Stagger className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {repos.map((repo) => (
         <StaggerItem key={repo.name}>
           <a href={repo.url} target="_blank" rel="noreferrer noopener" className="block h-full">

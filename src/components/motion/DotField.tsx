@@ -24,6 +24,9 @@ const BEAM_COUNT = 14;
 /** Fraction of beams that fire red rather than white. */
 const RED_SHARE = 0.3;
 const BEAM_SPEED = { min: 190, max: 340 } as const;
+/** Trail length as a fraction of the edge, and how many steps render its fade. */
+const TRAIL_LENGTH = 0.45;
+const TRAIL_SEGMENTS = 5;
 /** Radius within which the pointer pushes nodes away (CSS px). */
 const POINTER_RADIUS = 190;
 const POINTER_PUSH = 26;
@@ -271,7 +274,7 @@ function step(field: Field, delta: number): void {
 
     node.x = x;
     node.y = y;
-    node.charge = Math.max(0, node.charge - delta * 1.9);
+    node.charge = Math.max(0, node.charge - delta * 1.3);
   }
 
   for (const beam of field.beams) {
@@ -339,24 +342,33 @@ function draw(context: CanvasRenderingContext2D, field: Field, palette: Palette)
     if (!from || !to) continue;
     const headX = from.x + (to.x - from.x) * beam.t;
     const headY = from.y + (to.y - from.y) * beam.t;
-    const tail = Math.max(0, beam.t - 0.45);
-    const tailX = from.x + (to.x - from.x) * tail;
-    const tailY = from.y + (to.y - from.y) * tail;
+    const tail = Math.max(0, beam.t - TRAIL_LENGTH);
     const rgb = beam.red ? palette.red : palette.ash;
-
-    const gradient = context.createLinearGradient(tailX, tailY, headX, headY);
-    gradient.addColorStop(0, `rgb(${rgb} / 0)`);
-    gradient.addColorStop(1, `rgb(${rgb} / 0.95)`);
-    context.strokeStyle = gradient;
     context.lineWidth = beam.red ? 1.8 : 1.4;
-    context.beginPath();
-    context.moveTo(tailX, tailY);
-    context.lineTo(headX, headY);
-    context.stroke();
 
+    // Stepped alpha rather than a canvas gradient: createLinearGradient would
+    // allocate an object per beam per frame, which is the one thing this loop
+    // must not do. At this scale the steps are indistinguishable from a ramp.
+    for (let segment = 0; segment < TRAIL_SEGMENTS; segment++) {
+      const from0 = tail + ((beam.t - tail) * segment) / TRAIL_SEGMENTS;
+      const to0 = tail + ((beam.t - tail) * (segment + 1)) / TRAIL_SEGMENTS;
+      context.strokeStyle = `rgb(${rgb} / ${(((segment + 1) / TRAIL_SEGMENTS) * 0.95).toFixed(3)})`;
+      context.beginPath();
+      context.moveTo(from.x + (to.x - from.x) * from0, from.y + (to.y - from.y) * from0);
+      context.lineTo(from.x + (to.x - from.x) * to0, from.y + (to.y - from.y) * to0);
+      context.stroke();
+    }
+
+    // Halo then core — a two-fill fake glow. shadowBlur would look the same and
+    // cost a full-canvas filter pass per beam.
+    const core = beam.red ? 2.1 : 1.7;
+    context.fillStyle = `rgb(${rgb} / 0.16)`;
+    context.beginPath();
+    context.arc(headX, headY, core * 3.4, 0, Math.PI * 2);
+    context.fill();
     context.fillStyle = `rgb(${rgb} / 0.95)`;
     context.beginPath();
-    context.arc(headX, headY, beam.red ? 2.1 : 1.7, 0, Math.PI * 2);
+    context.arc(headX, headY, core, 0, Math.PI * 2);
     context.fill();
   }
   context.lineWidth = 1;

@@ -39,7 +39,7 @@ export function Gallery({ photos }: { photos: readonly Photo[] }) {
 
   return (
     <>
-      <div className="columns-1 gap-3 sm:columns-2 [&>*]:mb-3">
+      <div className="columns-1 gap-3 sm:columns-2 lg:columns-3 xl:columns-4 [&>*]:mb-3">
         {photos.map((photo, i) => (
           <motion.button
             key={photo.src}
@@ -62,7 +62,7 @@ export function Gallery({ photos }: { photos: readonly Photo[] }) {
               quality={90}
               placeholder="blur"
               blurDataURL={photo.blurDataURL}
-              sizes="(min-width: 640px) 50vw, 100vw"
+              sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
               className="w-full transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.02]"
             />
           </motion.button>

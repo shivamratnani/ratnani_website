@@ -10,8 +10,15 @@ import { education, experience, formatPeriod, type Role } from "@/data/experienc
 import { cn } from "@/lib/cn";
 
 /** Shared row chrome, so a role and the education entry cannot drift apart. */
-const ROW = "flex flex-col gap-1 py-5 sm:flex-row sm:items-baseline sm:gap-6";
+const ROW = "flex flex-col gap-2 py-5 sm:flex-row sm:items-baseline sm:gap-6";
 const PERIOD = "shrink-0 font-mono text-[11px] text-ash-1 tabular-nums sm:w-40 sm:text-right";
+/**
+ * Wraps the period and the toggle. On mobile they share one line under the
+ * tagline; `sm:contents` dissolves the wrapper so both become direct children
+ * of ROW's flex row again on wider screens.
+ */
+const META = "flex items-baseline justify-between gap-4 sm:contents";
+const TOGGLE = "w-4 shrink-0 text-center font-mono text-ash-1 text-sm";
 
 function collapse(reduced: boolean | null) {
   return {
@@ -39,19 +46,18 @@ function RoleRow({ role }: { role: Role }) {
         </h3>
         <p className={cn(MEASURE, "mt-1.5 text-ash-2 text-sm leading-relaxed")}>{role.tagline}</p>
       </div>
-      <span className={PERIOD}>
-        {formatPeriod(role.start)} — {formatPeriod(role.end)}
-      </span>
-      {expandable ? (
+      <div className={META}>
+        <span className={PERIOD}>
+          {formatPeriod(role.start)} — {formatPeriod(role.end)}
+        </span>
+        {/* Non-expandable rows keep an empty slot so every period column lines up. */}
         <span
           aria-hidden="true"
-          className="hidden w-4 shrink-0 text-center font-mono text-ash-1 text-sm transition-colors group-hover:text-red sm:block"
+          className={cn(TOGGLE, expandable && "transition-colors group-hover:text-red")}
         >
-          {open ? "−" : "+"}
+          {expandable ? (open ? "−" : "+") : ""}
         </span>
-      ) : (
-        <span aria-hidden="true" className="hidden w-4 shrink-0 sm:block" />
-      )}
+      </div>
     </div>
   );
 
@@ -139,10 +145,12 @@ export function Experience() {
               <span className="text-ash-1"> · {education.degree}</span>
             </h3>
           </div>
-          <span className={PERIOD}>
-            {formatPeriod(education.start)} — {formatPeriod(education.end)}
-          </span>
-          <span aria-hidden="true" className="hidden w-4 shrink-0 sm:block" />
+          <div className={META}>
+            <span className={PERIOD}>
+              {formatPeriod(education.start)} — {formatPeriod(education.end)}
+            </span>
+            <span aria-hidden="true" className={TOGGLE} />
+          </div>
         </div>
       </Reveal>
 

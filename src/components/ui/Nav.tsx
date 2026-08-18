@@ -161,7 +161,7 @@ export function Nav() {
                     aria-current={isActive(item.href, pathname, section) ? "page" : undefined}
                     className={cn(
                       "flex min-h-14 items-center border-ink-3/60 border-b text-lg transition-colors",
-                      isActive(item.href, pathname, section) ? "text-ash-3" : "text-ash-1",
+                      isActive(item.href, pathname, section) ? "text-ash-3" : "text-ash-2",
                     )}
                   >
                     {item.label}

@@ -46,7 +46,7 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
+    <form onSubmit={onSubmit} className="max-w-2xl space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <input name="name" required placeholder="Name" maxLength={120} className={FIELD} />
         <input name="email" type="email" required placeholder="Email" className={FIELD} />

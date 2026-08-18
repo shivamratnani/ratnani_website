@@ -4,9 +4,11 @@ import { Suspense } from "react";
 import { Reveal } from "@/components/motion/Reveal";
 import { NowPlaying } from "@/components/spotify/NowPlaying";
 import { TopList } from "@/components/spotify/TopList";
+import { MEASURE } from "@/components/ui/layout";
 import { Section } from "@/components/ui/Section";
 import { TimeAgo } from "@/components/ui/TimeAgo";
 import { experience } from "@/data/experience";
+import { cn } from "@/lib/cn";
 import { getNowPlaying, getSpotifyWeek } from "@/lib/spotify";
 
 export const metadata: Metadata = {
@@ -52,7 +54,7 @@ export default function NowPage() {
     <>
       <Section id="now" index="—" title="Now">
         <Reveal className="space-y-6">
-          <p className="text-ash-2 leading-relaxed">
+          <p className={cn(MEASURE, "text-ash-2 leading-relaxed")}>
             Updated whenever something changes. Currently in Manhattan, working on:
           </p>
           <ul className="space-y-3">
