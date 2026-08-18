@@ -74,6 +74,10 @@ and Production, so preview deploys can never write into the production 7-day win
    back into `.env.local` for you.
 5. `pnpm env:push`.
 
+> **Refresh tokens for this app expire after 180 days** (shown as "Refresh Token Lifetime"
+> on the app's dashboard page). When one lapses, the sync fails with a message naming the
+> fix, and the Now page's "synced Xm ago" visibly goes stale. Re-run steps 4–5 to recover.
+
 ## The Spotify 7-day window
 
 Spotify has no 7-day range — `time_range` offers only `short_term` (~4 weeks), `medium_term`, and

@@ -58,7 +58,21 @@ async function accessToken(): Promise<string> {
   });
 
   if (!response.ok) {
-    throw new Error(`Spotify token refresh failed (${response.status})`);
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+
+    // Spotify caps this app's refresh tokens at a 180-day lifetime, after which
+    // it answers invalid_grant. Name the fix in the message — this surfaces as a
+    // failed Actions run, and "400" alone would not say what to do about it.
+    if (body.error === "invalid_grant") {
+      throw new Error(
+        "Spotify refresh token is expired or revoked. Re-run `pnpm spotify:auth`, " +
+          "then `pnpm env:push`. Refresh tokens for this app expire after 180 days.",
+      );
+    }
+
+    throw new Error(
+      `Spotify token refresh failed (${response.status}): ${body.error ?? "unknown"}`,
+    );
   }
 
   return z.object({ access_token: z.string() }).parse(await response.json()).access_token;
