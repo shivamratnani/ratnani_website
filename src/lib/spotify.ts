@@ -439,6 +439,8 @@ const nowPlayingSchema = z.object({
     .nullable(),
 });
 
+const meSchema = z.object({ id: z.string() });
+
 const playlistsSchema = z.object({
   items: z.array(
     z
@@ -447,10 +449,15 @@ const playlistsSchema = z.object({
         name: z.string(),
         external_urls: z.object({ spotify: z.string() }),
         // Every field past the id is optional in practice: Spotify omits images
-        // on empty playlists and tracks/public on some collaborative ones, and a
+        // on empty playlists and `public` on some collaborative ones, and a
         // strict schema would throw the whole list away over one odd entry.
         images: imageSchema.nullish(),
+        // Spotify renamed the track-count field on playlist objects: it now
+        // arrives as `items`, and `tracks` is absent entirely. Read both, so a
+        // rollback either way still yields a count rather than a silent zero.
+        items: z.object({ total: z.number() }).nullish(),
         tracks: z.object({ total: z.number() }).nullish(),
+        owner: z.object({ id: z.string() }).nullish(),
         public: z.boolean().nullish(),
       })
       .nullable(),
@@ -472,25 +479,30 @@ export type Playlist = {
  */
 export async function getPlaylists(limit = 8): Promise<Playlist[]> {
   try {
-    const payload = await api(
-      `/me/playlists?limit=${Math.min(50, limit * 3)}`,
-      await accessToken(),
-    );
+    const token = await accessToken();
+    // /me/playlists returns followed playlists alongside your own, so the owner
+    // is needed to keep this to playlists you actually made.
+    const [me, payload] = await Promise.all([
+      api("/me", token),
+      api("/me/playlists?limit=50", token),
+    ]);
+    const mine = meSchema.safeParse(me);
+
     return playlistsSchema
       .parse(payload)
-      .items.flatMap((item) =>
-        item && item.public !== false
-          ? [
-              {
-                id: item.id,
-                name: item.name,
-                url: item.external_urls.spotify,
-                art: item.images?.at(0)?.url ?? null,
-                tracks: item.tracks?.total ?? 0,
-              },
-            ]
-          : [],
-      )
+      .items.flatMap((item) => {
+        if (!item || item.public === false) return [];
+        if (mine.success && item.owner && item.owner.id !== mine.data.id) return [];
+        return [
+          {
+            id: item.id,
+            name: item.name,
+            url: item.external_urls.spotify,
+            art: item.images?.at(0)?.url ?? null,
+            tracks: item.items?.total ?? item.tracks?.total ?? 0,
+          },
+        ];
+      })
       .slice(0, limit);
   } catch (error) {
     console.warn("[spotify] playlists unavailable:", error);

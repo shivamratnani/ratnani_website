@@ -28,17 +28,20 @@ export const MARK_HEIGHT = MARK_ROWS * CELL;
  * above, because the morph moves those dots rather than adding any.
  */
 const ICARUS = [
-  "......#......#...",
-  ".....#..#...#.#..",
-  "....#.#....#.#.#.",
-  "...##..#.#..#.#..",
-  "..#.#........#...",
-  ".#..#.....#......",
-  "....#...#........",
-  "...#.#.....#.....",
-  "..#...#..#.......",
-  ".#.....#.........",
-  ".................",
+  "................#....",
+  "..............#...#..",
+  ".............#.....#.",
+  ".........#...........",
+  ".............#......#",
+  ".#..#..#.............",
+  "..#...#......#.....#.",
+  "...###.....#..#...#..",
+  "....#...........#....",
+  "....#....#...........",
+  "....#................",
+  "...#.#.....#.........",
+  "..#...#..............",
+  ".#.....#.............",
 ] as const;
 
 export type Point = { x: number; y: number };
@@ -62,7 +65,7 @@ const markPoints: Point[] = GLYPHS.flatMap((glyph, glyphIndex) =>
 );
 
 /** Same bitmap idea as the glyphs, on a finer pitch so the figure has room. */
-const ICARUS_PITCH = 2.5;
+const ICARUS_PITCH = 2;
 
 /** Centres the finer Icarus grid inside the mark's own box. */
 const inset = (span: number, cells: number) => (span - cells * ICARUS_PITCH) / 2;
