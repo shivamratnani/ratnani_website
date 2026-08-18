@@ -97,8 +97,19 @@ day** and fail at deploy time on anything more frequent.
 
 ## Deploying
 
-1. `vercel link` under the `shiv-website` scope, set env vars, push.
-2. Add `sh1v.com` + `www.sh1v.com` in Vercel. Create the records Vercel shows in Cloudflare DNS as
+Continuous deployment is live. The Vercel project `shiv-website/shiv-website` is connected to this
+repository with `main` as the production branch, so **every push to `main` builds and promotes to
+production automatically** and every pull request gets a preview deployment. Nothing in CI deploys —
+there is no Vercel token in GitHub, because the Git integration does not need one. The Actions
+workflow runs lint, typecheck, tests, and a build purely as a gate.
+
+Deployment protection is set to `all_except_custom_domains`: `*.vercel.app` URLs sit behind Vercel
+SSO, and the site is public only on an attached custom domain. Until a domain is attached, nothing
+is publicly reachable — that is deliberate, not a misconfiguration.
+
+To attach the domain:
+
+1. Add `sh1v.com` + `www.sh1v.com` in Vercel. Create the records Vercel shows in Cloudflare DNS as
    **DNS-only (grey cloud)** — proxying breaks Vercel's certificate issuance.
 3. **`ratnani.org` MX records are Cloudflare Email Routing and must not be touched.** Replace only
    its A records with a proxied `AAAA 100::` placeholder, then add a Single Redirect rule:
