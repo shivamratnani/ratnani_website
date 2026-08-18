@@ -1,0 +1,40 @@
+name: Spotify sync
+
+# Every 30 minutes. Vercel Cron is capped at once per day on Hobby, which would
+# make a true rolling 7-day window impossible — hence Actions.
+#
+# NOTE: GitHub disables scheduled workflows on public repos after 60 days with
+# no repository activity. The Now page surfaces "synced Xm ago" so a stalled
+# cron is visible rather than silent. Re-enable from the Actions tab if it stops.
+on:
+  schedule:
+    - cron: "3,33 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: spotify-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger ingest
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://sh1v.com' }}
+        run: |
+          status=$(curl --silent --show-error --location \
+            --output /tmp/response.json --write-out '%{http_code}' \
+            --max-time 30 --retry 2 --retry-delay 5 \
+            --request POST "$SITE_URL/api/cron/spotify-sync" \
+            --header "Authorization: Bearer $CRON_SECRET")
+
+          echo "HTTP $status"
+          cat /tmp/response.json
+          echo
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Spotify sync failed with HTTP $status"
+            exit 1
+          fi

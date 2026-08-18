@@ -1,0 +1,60 @@
+---
+title: What actually moves answer rates on a million calls a month
+description: Caller ID reputation is not a vendor problem you buy your way out of. It is a traffic-shaping problem.
+date: 2026-08-10
+draft: true
+---
+
+When you are placing somewhere between 500,000 and a million AI voice calls a month, the
+difference between a 12% and a 20% answer rate is not a rounding error. It is the entire
+economics of the channel.
+
+The instinct is to treat this as a procurement problem — find the vendor with the best
+attestation story, sign, move on. That instinct is wrong, and it costs you a quarter before
+you find out.
+
+## Attestation is necessary and not sufficient
+
+STIR/SHAKEN attestation tells the terminating carrier that someone vouched for your right
+to use the calling number. A-level attestation means your originating carrier knows you and
+knows the number is yours. That is table stakes — without it you are marked as suspicious
+before anything else is evaluated.
+
+What it does not do is tell the analytics engines sitting in front of the subscriber whether
+your traffic *behaves* like traffic worth connecting. Those engines — the ones actually
+deciding whether your call shows up as "Scam Likely" — are reading call patterns:
+
+- Short-duration call ratio
+- Calls per number per day
+- Answer-to-attempt ratio over a rolling window
+- Complaint rate, weighted heavily
+
+You can hold perfect attestation and still get labeled, because labeling is a behavioral
+verdict, not a credential check.
+
+## The architecture that follows from that
+
+Once you accept that reputation is behavioral, the infrastructure question changes. You stop
+asking "which vendor" and start asking "how do I shape traffic per number."
+
+That means the routing layer needs to know things the dialer does not:
+
+```
+number pool  →  per-number rolling counters  →  routing decision
+                (attempts, answers, duration)
+```
+
+A number that has been burning through attempts with no answers should be rested, not pushed
+harder. A number with a healthy answer ratio can carry more. This is a control loop, and it
+belongs in the SIP layer where you can actually see the disposition of every call.
+
+We run this with Jambonz in front of the carrier trunks and HAProxy distributing across
+media servers, which gives one place to observe every call leg and one place to make the
+routing decision. The alternative — letting the dialer pick numbers round-robin and hoping —
+is what most teams do, and it is why most teams plateau.
+
+## What I would tell someone starting
+
+Instrument disposition before you optimize anything. You cannot shape traffic you cannot see.
+Get per-number answer rates into a dashboard, watch them for two weeks, and the pattern that
+is costing you money will be obvious well before any vendor conversation.

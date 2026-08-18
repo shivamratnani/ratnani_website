@@ -1,0 +1,56 @@
+---
+title: The Flask to FastAPI migration that was really an asyncio migration
+description: Doubling throughput had almost nothing to do with the framework and everything to do with what was blocking.
+date: 2026-07-22
+draft: true
+---
+
+We moved a healthcare API from Flask to FastAPI and p90 latency went from 600ms to 200ms.
+It is tempting to write that up as "FastAPI is 3x faster." That would be wrong, and it would
+teach the wrong lesson to anyone reading it.
+
+## Where the time actually went
+
+The service was doing what most Python services do: sitting in synchronous I/O waits. Three
+sequential calls to an EHR, one to object storage, one to a model endpoint — each blocking a
+worker for its full round trip. With a fixed worker pool, concurrency was capped at the
+number of workers, and every request queued behind the slowest thing in flight.
+
+Under that shape, the framework is irrelevant. Flask was not the bottleneck. Blocking was.
+
+## What the migration actually bought
+
+FastAPI mattered because it made async the default path rather than something bolted on.
+Once the handlers were `async def` and the clients were `httpx.AsyncClient` instead of
+`requests`, those five sequential round trips became:
+
+```python
+notes, labs, meds = await asyncio.gather(
+    ehr.fetch_notes(patient_id),
+    ehr.fetch_labs(patient_id),
+    ehr.fetch_medications(patient_id),
+)
+```
+
+Three round trips collapsed into one wall-clock wait. That is where the latency went — not
+into a faster framework, into fewer serialized waits.
+
+## The part that bit us
+
+`async def` in front of a synchronous client is worse than no async at all. It blocks the
+event loop instead of just a worker, and it takes down concurrency for every other request
+on that process rather than only its own.
+
+We shipped exactly this mistake once, with a database driver that had not been swapped for
+its async equivalent. Throughput dropped below the Flask baseline. The fix was mechanical;
+finding it was not, because the symptom was general slowness rather than a specific failure.
+
+If you are doing this migration, audit every client library before you convert a single
+handler. The framework change is the easy half.
+
+## The honest version of the result
+
+Doubling throughput came from removing serialization, not from adopting FastAPI. You could
+have gotten most of it in Flask with a thread pool and a lot of discipline. FastAPI made the
+correct thing the default thing, and on a team shipping quickly, that is worth a great deal —
+but it is a different claim than "the framework is faster."

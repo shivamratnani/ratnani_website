@@ -1,0 +1,335 @@
+import { cacheLife } from "next/cache";
+import { z } from "zod";
+import { requireEnv } from "./env";
+import { redis } from "./redis";
+
+const TOKEN_URL = "https://accounts.spotify.com/api/token";
+const API = "https://api.spotify.com/v1";
+
+/** Days retained. One more than the 7 we report, so the window never underfills. */
+const RETENTION_DAYS = 8;
+const WINDOW_DAYS = 7;
+const TTL_SECONDS = RETENTION_DAYS * 24 * 60 * 60;
+
+const KEY = {
+  trackPlays: (day: string) => `plays:track:${day}`,
+  artistPlays: (day: string) => `plays:artist:${day}`,
+  trackMeta: "meta:track",
+  artistMeta: "meta:artist",
+  cursor: "sync:cursor",
+  syncedAt: "sync:at",
+} as const;
+
+export type Track = { id: string; name: string; artist: string; url: string; art: string | null };
+export type Artist = { id: string; name: string; url: string; art: string | null };
+export type Ranked<T> = T & { plays: number };
+
+export type SpotifyWeek = {
+  tracks: Ranked<Track>[];
+  artists: Ranked<Artist>[];
+  /** Epoch ms of the last successful sync, or null if it has never run. */
+  syncedAt: number | null;
+};
+
+// --- auth -------------------------------------------------------------------
+
+/**
+ * Exchanges the long-lived refresh token for an access token. Not cached —
+ * the sync runs every 30 min and tokens live an hour, so caching would add a
+ * staleness bug for no measurable gain.
+ */
+async function accessToken(): Promise<string> {
+  const env = requireEnv("SPOTIFY_CLIENT_ID", "SPOTIFY_CLIENT_SECRET", "SPOTIFY_REFRESH_TOKEN");
+  const basic = Buffer.from(`${env.SPOTIFY_CLIENT_ID}:${env.SPOTIFY_CLIENT_SECRET}`).toString(
+    "base64",
+  );
+
+  const response = await fetch(TOKEN_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basic}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: env.SPOTIFY_REFRESH_TOKEN,
+    }),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Spotify token refresh failed (${response.status})`);
+  }
+
+  return z.object({ access_token: z.string() }).parse(await response.json()).access_token;
+}
+
+async function api(path: string, token: string): Promise<unknown> {
+  const response = await fetch(`${API}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (response.status === 204) return null;
+  if (!response.ok) throw new Error(`Spotify ${path} failed (${response.status})`);
+  return response.json();
+}
+
+// --- ingest -----------------------------------------------------------------
+
+const imageSchema = z.array(z.object({ url: z.string() }));
+
+const recentSchema = z.object({
+  items: z.array(
+    z.object({
+      played_at: z.string(),
+      track: z.object({
+        id: z.string().nullable(),
+        name: z.string(),
+        external_urls: z.object({ spotify: z.string() }),
+        album: z.object({ images: imageSchema }),
+        artists: z
+          .array(
+            z.object({
+              id: z.string().nullable(),
+              name: z.string(),
+              external_urls: z.object({ spotify: z.string() }),
+            }),
+          )
+          .min(1),
+      }),
+    }),
+  ),
+});
+
+/** UTC day key, e.g. "2026-08-18". */
+export function dayKey(epochMs: number): string {
+  return new Date(epochMs).toISOString().slice(0, 10);
+}
+
+/** The RETENTION-bounded set of day keys covering the reporting window. */
+export function windowDays(now: number, days = WINDOW_DAYS): string[] {
+  return Array.from({ length: days }, (_, i) => dayKey(now - i * 86_400_000));
+}
+
+export type PlayEvent = {
+  playedAt: number;
+  track: Track;
+  artist: Artist | null;
+};
+
+/**
+ * Pure fold: selects plays strictly newer than the cursor and buckets them by
+ * UTC day. Extracted from the sync so the idempotency guarantee — the property
+ * that makes re-running the cron safe — is directly testable without Redis.
+ */
+export function foldPlays(
+  items: readonly PlayEvent[],
+  cursor: number,
+): { newest: number; days: Map<string, PlayEvent[]> } {
+  const days = new Map<string, PlayEvent[]>();
+  let newest = cursor;
+
+  for (const play of items) {
+    if (play.playedAt <= cursor) continue;
+    newest = Math.max(newest, play.playedAt);
+    const day = dayKey(play.playedAt);
+    const bucket = days.get(day);
+    if (bucket) bucket.push(play);
+    else days.set(day, [play]);
+  }
+
+  return { newest, days };
+}
+
+/**
+ * Pure merge: sums Upstash zrange withScores payloads (flat [member, score, ...])
+ * into one id -> total map.
+ */
+export function mergeScores(results: readonly (string | number)[][]): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const flat of results) {
+    for (let i = 0; i < flat.length; i += 2) {
+      const id = String(flat[i]);
+      totals.set(id, (totals.get(id) ?? 0) + Number(flat[i + 1] ?? 0));
+    }
+  }
+  return totals;
+}
+
+/** Pure rank: highest total first, capped at `limit`. */
+export function topN(totals: Map<string, number>, limit: number): [string, number][] {
+  return [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
+}
+
+/**
+ * Pulls plays since the stored cursor and folds them into per-day sorted sets.
+ *
+ * Idempotent: the `after` cursor advances to the newest `played_at` seen, so a
+ * re-run inside the same window ingests nothing and cannot double-count. Day
+ * keys carry an 8-day TTL, so the window prunes itself with no cleanup job.
+ */
+export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: number }> {
+  const db = redis();
+  const token = await accessToken();
+  const cursor = await db.get<number>(KEY.cursor);
+
+  const query = new URLSearchParams({ limit: "50" });
+  if (cursor) query.set("after", String(cursor));
+
+  const payload = await api(`/me/player/recently-played?${query}`, token);
+  const { items } = recentSchema.parse(payload);
+  if (items.length === 0) {
+    await db.set(KEY.syncedAt, now);
+    return { ingested: 0 };
+  }
+
+  const events: PlayEvent[] = items.flatMap((item) => {
+    const { track } = item;
+    const artist = track.artists[0];
+    if (!track.id) return [];
+    return [
+      {
+        playedAt: Date.parse(item.played_at),
+        track: {
+          id: track.id,
+          name: track.name,
+          artist: track.artists.map((a) => a.name).join(", "),
+          url: track.external_urls.spotify,
+          art: track.album.images.at(-1)?.url ?? null,
+        },
+        artist:
+          artist?.id != null
+            ? {
+                id: artist.id,
+                name: artist.name,
+                url: artist.external_urls.spotify,
+                art: null,
+              }
+            : null,
+      },
+    ];
+  });
+
+  const { newest, days } = foldPlays(events, cursor ?? 0);
+  const pipeline = db.pipeline();
+  let ingested = 0;
+
+  for (const [day, plays] of days) {
+    for (const play of plays) {
+      ingested += 1;
+      pipeline.zincrby(KEY.trackPlays(day), 1, play.track.id);
+      pipeline.hset(KEY.trackMeta, { [play.track.id]: play.track });
+
+      if (play.artist) {
+        pipeline.zincrby(KEY.artistPlays(day), 1, play.artist.id);
+        pipeline.hset(KEY.artistMeta, { [play.artist.id]: play.artist });
+      }
+    }
+    pipeline.expire(KEY.trackPlays(day), TTL_SECONDS);
+    pipeline.expire(KEY.artistPlays(day), TTL_SECONDS);
+  }
+
+  pipeline.set(KEY.cursor, newest);
+  pipeline.set(KEY.syncedAt, now);
+  await pipeline.exec();
+
+  return { ingested };
+}
+
+// --- read -------------------------------------------------------------------
+
+/** Sums play counts for one entity type across the window's day keys. */
+async function rank(keyFor: (day: string) => string, days: string[]): Promise<Map<string, number>> {
+  const db = redis();
+  const pipeline = db.pipeline();
+  for (const day of days) pipeline.zrange(keyFor(day), 0, -1, { withScores: true });
+  return mergeScores((await pipeline.exec()) as (string | number)[][]);
+}
+
+/** Attaches stored metadata to ranked ids, dropping any that lost their entry. */
+async function hydrate<T extends { id: string }>(
+  metaKey: string,
+  totals: Map<string, number>,
+  limit: number,
+): Promise<Ranked<T>[]> {
+  const top = topN(totals, limit);
+  if (top.length === 0) return [];
+
+  const meta = await redis().hmget<Record<string, T>>(metaKey, ...top.map(([id]) => id));
+
+  return top
+    .map(([id, plays]) => {
+      const entity = meta?.[id];
+      return entity ? { ...entity, plays } : null;
+    })
+    .filter((entry): entry is Ranked<T> => entry !== null);
+}
+
+const EMPTY_WEEK: SpotifyWeek = { tracks: [], artists: [], syncedAt: null };
+
+/**
+ * The rolling 7-day window, or an empty week if Redis is unreachable.
+ *
+ * Degrading to empty rather than throwing keeps a storage blip — or a build
+ * with no credentials — from breaking the page.
+ */
+export async function getSpotifyWeek(limit = 8): Promise<SpotifyWeek> {
+  try {
+    return await readWeek(limit);
+  } catch (error) {
+    console.error("[spotify]", error);
+    return EMPTY_WEEK;
+  }
+}
+
+async function readWeek(limit: number): Promise<SpotifyWeek> {
+  "use cache";
+  cacheLife("minutes");
+
+  const days = windowDays(Date.now());
+  const [trackTotals, artistTotals, syncedAt] = await Promise.all([
+    rank(KEY.trackPlays, days),
+    rank(KEY.artistPlays, days),
+    redis().get<number>(KEY.syncedAt),
+  ]);
+
+  const [tracks, artists] = await Promise.all([
+    hydrate<Track>(KEY.trackMeta, trackTotals, limit),
+    hydrate<Artist>(KEY.artistMeta, artistTotals, limit),
+  ]);
+
+  return { tracks, artists, syncedAt: syncedAt ?? null };
+}
+
+// --- now playing ------------------------------------------------------------
+
+const nowPlayingSchema = z.object({
+  is_playing: z.boolean(),
+  item: z
+    .object({
+      name: z.string(),
+      external_urls: z.object({ spotify: z.string() }),
+      album: z.object({ images: imageSchema }),
+      artists: z.array(z.object({ name: z.string() })).min(1),
+    })
+    .nullable(),
+});
+
+export type NowPlaying = { name: string; artist: string; url: string; art: string | null } | null;
+
+/** Currently playing track, or null when nothing is. Never cached. */
+export async function getNowPlaying(): Promise<NowPlaying> {
+  const payload = await api("/me/player/currently-playing", await accessToken());
+  if (!payload) return null;
+
+  const parsed = nowPlayingSchema.safeParse(payload);
+  if (!parsed.success || !parsed.data.is_playing || !parsed.data.item) return null;
+
+  const { item } = parsed.data;
+  return {
+    name: item.name,
+    artist: item.artists.map((a) => a.name).join(", "),
+    url: item.external_urls.spotify,
+    art: item.album.images.at(-1)?.url ?? null,
+  };
+}

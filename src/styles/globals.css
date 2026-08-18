@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+ * Design tokens. This @theme block is the ONLY place colour, type scale, and
+ * timing are defined. Nothing else in the codebase writes a raw hex value.
+ * ------------------------------------------------------------------------- */
+@theme {
+  /* Monochrome ramp — ink is ground-up, ash is text-down. */
+  --color-ink-0: #050505;
+  --color-ink-1: #0c0c0d;
+  --color-ink-2: #151517;
+  --color-ink-3: #232326;
+  --color-ash-1: #6e6e76;
+  --color-ash-2: #a1a1aa;
+  --color-ash-3: #ededef;
+
+  /* The pop. Verified 5.48:1 against --color-ink-0 (WCAG AA normal text). */
+  --color-red: #ff2d20;
+  --color-red-dim: #c41a10;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  /* Expo-out. Extracted from paradym.space's stylesheet — the single easing
+   * curve the whole site moves on. Mirrored in components/motion/transitions.ts
+   * for the JS side; these two must stay in sync. */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  ::selection {
+    background: var(--color-red);
+    color: var(--color-ink-0);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-ink-0);
+    color: var(--color-ash-3);
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-red);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* Lenis owns scroll position; without this the wrapper collapses. */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@utility link-sweep {
+  background-image: linear-gradient(var(--color-red), var(--color-red));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size 400ms var(--ease-out-expo);
+
+  &:hover {
+    background-size: 100% 1px;
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-100%);
+  }
+}

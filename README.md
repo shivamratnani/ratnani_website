@@ -1,233 +1,100 @@
-# Personal Portfolio Website (ratnani.org)
+# sh1v.com
 
-## Overview
-A dynamic portfolio website built with Angular 17, showcasing professional experience, projects, and photography. The site features an immersive star-field animation background, smooth section transitions, and interactive components. The platform includes dedicated sections for project showcases, a photography portfolio, resume display, and a contact system with email integration.
+Personal site — Next.js 16, Tailwind v4, Motion. Dark monochrome with a single red accent.
 
-Live Site: [ratnani.org](https://ratnani.org)  
-Repository: [github.com/shivamratnani/ratnani_website](https://github.com/shivamratnani/ratnani_website)
+Three pieces of live data: a GitHub contribution tracker, a genuine rolling 7-day Spotify
+top-tracks/artists window, and a Now page.
 
-## Features
-### Core Features
-- 🌟 Interactive star-field background with 100 dynamic animated stars
-- 📱 Responsive design with mobile-first approach and hamburger menu
-- 🔄 Smooth section transitions using IntersectionObserver
-- 📸 Dynamic photography portfolio with expandable gallery view
-- 📝 Integrated contact form with email functionality using Nodemailer
-- 📄 PDF resume viewer with direct download option
-- 🎨 Custom animations including falling emojis and UI transitions
-- 🔗 Integrated social media links and professional connections
-
-### Interactive Elements
-- Expandable project cards with detailed information
-- Real-time form validation with error messaging
-- Mobile-responsive navigation menu
-- Interactive image gallery with full-screen mode
-- Custom emoji animation system
-- Smooth scrolling between sections
-
-## Tech Stack
-### Frontend
-- Angular 17.0.8
-- TypeScript 5.2.2
-- SCSS for styling
-- Bootstrap Icons for UI elements
-- Angular Material UI components
-- Zone.js for performance optimization
-- RxJS for reactive programming
-
-### Backend
-- Node.js
-- Express 4.21.2
-- Nodemailer 6.9.16
-- CORS middleware
-- dotenv for environment management
-
-### Development Tools
-- Angular CLI 17.0.8
-- Angular DevKit
-- TypeScript compiler
-- Karma & Jasmine for testing
-- ESLint for code quality
-- npm 9.8.0+
-- Node.js 18.19.1+
-
-## Project Structure
 ```
-ratnani_website/
-├── src/
-│   ├── app/
-│   │   ├── components/
-│   │   │   ├── main/
-│   │   │   │   ├── main.component.ts
-│   │   │   │   └── main.component.scss
-│   │   │   ├── overview/
-│   │   │   ├── projects/
-│   │   │   ├── photography/
-│   │   │   ├── resume/
-│   │   │   └── contact/
-│   │   ├── app.component.ts
-│   │   ├── app.config.ts
-│   │   └── app.routes.ts
-│   ├── assets/
-│   │   ├── photos/
-│   │   ├── images/
-│   │   └── Shivam Ratnani - Resume.pdf
-│   └── styles/
-├── server/
-│   └── server.ts
-└── package.json
+pnpm install
+pnpm dev          # http://localhost:3000
+pnpm lint         # Biome (lint + format)
+pnpm typecheck    # tsc --noEmit
+pnpm test         # Vitest
+pnpm build
+pnpm photos       # regenerate src/data/photos.ts after changing public/photos
+pnpm spotify:auth # one-time: mint a Spotify refresh token
 ```
 
-## Setup and Installation
-### Prerequisites
-- Node.js (>= 18.19.1)
-- npm (>= 9.8.0)
-- Angular CLI (17.0.8)
+## Architecture
 
-### Installation Steps
-1. Clone the repository
+| Path | Role |
+|---|---|
+| `src/components/motion/transitions.ts` | The **only** place easing, duration, and stagger are defined |
+| `src/lib/{github,spotify,redis,mdx,env}.ts` | One module per external service; routes stay thin |
+| `src/data/experience.ts` | Single source for work history — feeds timeline, ⌘K palette, OG images |
+| `src/styles/globals.css` | `@theme` tokens; no raw hex values live anywhere else |
+
+`/` and `/now` are **Partial Prerender**: a static shell with request-time data islands
+(`await connection()` inside the Suspense boundary). GitHub and Spotify failures degrade to a
+fallback rather than taking the page down.
+
+### Motion
+One entrance (`<Reveal>`), one list primitive (`<Stagger>` + `<StaggerItem>`), one curve
+(`cubic-bezier(0.16, 1, 0.3, 1)`). `useReducedMotion()` is checked inside the primitives, so
+`prefers-reduced-motion` is honoured everywhere without per-component work. The site defines a
+single `@keyframes` rule (the marquee).
+
+### Red
+Red is an event, not a theme — at most one red element per viewport. It marks the heatmap's top
+quartile, section indices, the ⌘K active row, focus rings, link sweeps, and `::selection`.
+`#ff2d20` on `#050505` measures **5.48:1** (WCAG AA).
+
+## Environment
+
+Copy `.env.example`. Every variable is validated by `src/lib/env.ts` at first use, so a missing
+one fails with a message naming it.
+
 ```bash
-git clone https://github.com/shivamratnani/ratnani_website.git
-cd ratnani_website
+# Vercel — repeat with `preview` for the preview environment
+vercel env add GITHUB_TOKEN production          # fine-grained PAT, read:user
+vercel env add SPOTIFY_CLIENT_ID production
+vercel env add SPOTIFY_CLIENT_SECRET production
+vercel env add SPOTIFY_REFRESH_TOKEN production # from `pnpm spotify:auth`
+vercel env add RESEND_API_KEY production
+vercel env add CONTACT_TO_EMAIL production
+vercel env add CRON_SECRET production           # openssl rand -hex 32
+
+# GitHub — the Actions cron needs only this
+gh secret set CRON_SECRET
 ```
 
-2. Install dependencies
-```bash
-npm install
-```
+`UPSTASH_REDIS_REST_URL` / `_TOKEN` are injected by the Vercel Marketplace integration — do not
+set them by hand. Use **different** `CRON_SECRET`s and **separate Upstash databases** for Preview
+and Production, so preview deploys can never write into the production 7-day window.
 
-3. Configure environment variables
-Create a `.env` file in the root directory:
-```env
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-app-specific-password
-PORT=3000
-```
+## The Spotify 7-day window
 
-4. Start development server
-```bash
-# Frontend
-npm run start
+Spotify has no 7-day range — `time_range` offers only `short_term` (~4 weeks), `medium_term`, and
+`long_term`, and `/recently-played` is a rolling 50-item buffer. A real week has to be accumulated.
 
-# Backend
-node server.ts
-```
+`.github/workflows/spotify-sync.yml` polls every 30 minutes and POSTs to
+`/api/cron/spotify-sync`. Plays fold into per-day Redis sorted sets with an **8-day TTL**, so the
+window prunes itself. A stored cursor makes re-runs idempotent — verified by tests in
+`src/lib/spotify.test.ts`.
 
-5. Build for production
-```bash
-npm run build -- --configuration production
-```
+This is an Action rather than a Vercel Cron because **Vercel Hobby crons are capped at once per
+day** and fail at deploy time on anything more frequent.
 
-## Component Details
+> ⚠️ GitHub disables scheduled workflows on public repos after **60 days without repository
+> activity**. The Now page renders "synced Xm ago" so a stalled cron is visible rather than silent.
+> Re-enable it from the Actions tab if it stops.
 
-### Navigation System
-```typescript
-export class AppComponent implements AfterViewInit {
-  tabs = [
-    { name: 'Main', id: 'main' },
-    { name: 'Overview', id: 'overview' },
-    { name: 'Projects', id: 'projects' },
-    { name: 'Photography', id: 'photography' },
-    { name: 'Resume', id: 'resume' },
-    { name: 'Contact + Links', id: 'contact' }
-  ];
+## Deploying
 
-  ngAfterViewInit() {
-    if (typeof window !== 'undefined') {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            this.activeSection = entry.target.id;
-          }
-        });
-      }, { threshold: 0.5 });
+1. `vercel link` under the `shiv-website` scope, set env vars, push.
+2. Add `sh1v.com` + `www.sh1v.com` in Vercel. Create the records Vercel shows in Cloudflare DNS as
+   **DNS-only (grey cloud)** — proxying breaks Vercel's certificate issuance.
+3. **`ratnani.org` MX records are Cloudflare Email Routing and must not be touched.** Replace only
+   its A records with a proxied `AAAA 100::` placeholder, then add a Single Redirect rule:
+   `http.host eq "ratnani.org"` → `concat("https://sh1v.com", http.request.uri.path)`, 301,
+   preserve query. Same for `www`.
+4. Verify `dig ratnani.org MX` is unchanged and send a real test email to `shiv@ratnani.org`.
+5. Delete the old Cloudflare Pages project `ratnani-website`.
+6. Downgrade the `ratnani.org` zone Pro → Free. Read the "you will lose" list first and confirm
+   Email Routing is not on it. Redirect rules survive — Free allows 10.
 
-      document.querySelectorAll('.section').forEach((section) => {
-        observer.observe(section);
-      });
-    }
-  }
-}
-```
+## Writing
 
-### Star-field Animation
-```typescript
-export class AppComponent {
-  stars = Array(100).fill(0);
-  // Creates 100 stars with random positions and animations
-}
-```
-
-### Contact System
-```typescript
-interface ContactForm {
-  name: string;
-  email: string;
-  phone: string;
-  subject: string;
-  message: string;
-}
-
-export class ContactComponent {
-  async onSubmit() {
-    try {
-      const response = await this.http.post('http://localhost:3000/api/send-email', 
-        this.formData).toPromise();
-      // Handle success
-    } catch (error) {
-      // Handle error
-    }
-  }
-}
-```
-
-## Development Guidelines
-
-### Code Style
-- Follow Angular style guide practices
-- Use TypeScript strict mode for type safety
-- Implement comprehensive error handling
-- Write clear documentation and comments
-- Use SCSS with BEM methodology
-
-### Testing
-- Unit tests with Jasmine framework
-- Component testing with Angular TestBed
-- Integration testing for API endpoints
-- End-to-end testing with Protractor
-- Coverage reporting with Karma
-
-### Performance Optimization
-- Implement lazy loading for components
-- Optimize images and assets
-- Minimize bundle sizes
-- Use efficient caching strategies
-- Enable Angular production mode
-
-## Deployment
-
-### Production Build
-```bash
-npm run build -- --configuration production
-```
-
-### Server Configuration
-- Configure CORS policies for security
-- Set up SSL certificate for HTTPS
-- Enable HTTP/2 for improved performance
-- Configure email service securely
-- Set up proper error logging
-
-## Contributing
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## Contact
-Shivam Ratnani  
-Email: ratnani@wisc.edu  
-Website: [ratnani.org](https://ratnani.org)  
-LinkedIn: [linkedin.com/in/shivamratnani](https://linkedin.com/in/shivamratnani)  
-GitHub: [github.com/shivamratnani](https://github.com/shivamratnani)
+Posts live in `content/writing/*.mdx` with `title`, `description`, `date`, `draft` frontmatter.
+`draft: true` posts are reachable by direct URL but never listed and never in the sitemap.
