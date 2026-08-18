@@ -17,7 +17,7 @@ export function Heatmap({ weeks }: { weeks: ContributionDay[][] }) {
   const reduced = useReducedMotion();
 
   return (
-    <div className="overflow-x-auto pb-2">
+    <div className="overflow-x-auto pb-2 [mask-image:linear-gradient(90deg,black_calc(100%-3rem),transparent)] sm:[mask-image:none]">
       <div className="flex gap-3">
         <div
           className="flex shrink-0 flex-col justify-between py-[2px] font-mono text-[10px] text-ash-1"

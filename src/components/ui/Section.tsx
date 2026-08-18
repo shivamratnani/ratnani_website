@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Reveal } from "@/components/motion/Reveal";
+import { SHELL } from "@/components/ui/layout";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 import { cn } from "@/lib/cn";
 
 type SectionProps = {
@@ -12,19 +13,18 @@ type SectionProps = {
 };
 
 /**
- * The only section wrapper. Owns heading treatment, vertical rhythm, and the
- * scroll reveal, so spacing cannot drift between sections.
+ * The only section wrapper. Owns the full-bleed gutters, vertical rhythm, and
+ * anchor offset, so spacing cannot drift between sections. Stays a Server
+ * Component; the scroll-linked heading is the one client island inside it.
  */
 export function Section({ id, index, title, children, className }: SectionProps) {
   return (
-    <section id={id} className={cn("mx-auto w-full max-w-3xl px-6 py-20 sm:py-28", className)}>
-      {title ? (
-        <Reveal className="mb-10 flex items-baseline gap-3">
-          {index ? <span className="font-mono text-xs text-red">{index}</span> : null}
-          <h2 className="font-medium text-ash-3 text-xl tracking-tight">{title}</h2>
-          <span className="h-px flex-1 bg-ink-3" aria-hidden="true" />
-        </Reveal>
-      ) : null}
+    <section
+      id={id}
+      // The header is fixed, so anchor jumps need to clear it themselves.
+      className={cn(SHELL, "scroll-mt-20 py-20 sm:py-28", className)}
+    >
+      {title ? <SectionHeading index={index} title={title} /> : null}
       {children}
     </section>
   );

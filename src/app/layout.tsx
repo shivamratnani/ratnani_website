@@ -4,6 +4,8 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { CommandPalette } from "@/components/CommandPalette";
+import { Cursor } from "@/components/motion/Cursor";
+import { PageTransition } from "@/components/motion/PageTransition";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { Footer } from "@/components/ui/Footer";
 import { Nav } from "@/components/ui/Nav";
@@ -43,9 +45,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <Nav />
-        <main id="content">{children}</main>
+        <main id="content">
+          <PageTransition>{children}</PageTransition>
+        </main>
         <Footer />
         <CommandPalette />
+        <Cursor />
         <Analytics />
         <SpeedInsights />
       </body>

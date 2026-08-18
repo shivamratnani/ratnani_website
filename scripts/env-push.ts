@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { readEnvFile } from "../src/lib/dotenv.ts";
 
 const TARGET = process.argv[2] ?? "production";
-const MANAGED_BY_INTEGRATION = ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"];
+const MANAGED_BY_INTEGRATION = ["KV_REST_API_URL", "KV_REST_API_TOKEN", "KV_URL", "REDIS_URL"];
 
 const KEYS = [
   "GITHUB_TOKEN",

@@ -10,6 +10,9 @@ type StaggerProps = {
   children: ReactNode;
   interval?: number;
   delayChildren?: number;
+  /** "view" waits for the scroll; "mount" releases immediately, for children
+   * revealed inside something that already animated (an accordion panel). */
+  trigger?: "view" | "mount";
 } & DivProps;
 
 /**
@@ -20,16 +23,23 @@ export function Stagger({
   children,
   interval = STAGGER.base,
   delayChildren = 0,
+  trigger = "view",
   ...rest
 }: StaggerProps) {
   const reduced = useReducedMotion();
+  const enter =
+    trigger === "mount"
+      ? { animate: "visible" as const }
+      : {
+          whileInView: "visible" as const,
+          viewport: { once: true, margin: "0px 0px -12% 0px" },
+        };
 
   return (
     <motion.div
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "0px 0px -12% 0px" }}
       variants={reduced ? staticVariants : staggerVariants(interval, delayChildren)}
+      {...enter}
       {...rest}
     >
       {children}

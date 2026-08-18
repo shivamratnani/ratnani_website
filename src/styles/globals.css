@@ -114,7 +114,9 @@
   0%,
   70%,
   100% {
-    opacity: 0.35;
+    /* Floor stays high on purpose: dip much below this and the wave dissolves
+     * the letterforms instead of travelling across them. */
+    opacity: 0.72;
   }
   35% {
     opacity: 1;

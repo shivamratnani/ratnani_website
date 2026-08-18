@@ -1,5 +1,7 @@
 import { cacheLife } from "next/cache";
+import { SHELL } from "@/components/ui/layout";
 import { site } from "@/data/site";
+import { cn } from "@/lib/cn";
 
 /** Cached: the copyright year is stable far longer than a deploy cycle. */
 export async function Footer() {
@@ -7,7 +9,7 @@ export async function Footer() {
   cacheLife("days");
 
   return (
-    <footer className="mx-auto max-w-3xl px-6 py-12">
+    <footer className={cn(SHELL, "py-12")}>
       <div className="flex flex-wrap items-center justify-between gap-4 border-ink-3 border-t pt-6">
         <p className="font-mono text-[11px] text-ash-1">
           © {new Date().getFullYear()} {site.name}

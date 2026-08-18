@@ -10,8 +10,10 @@ const schema = z.object({
   SPOTIFY_CLIENT_ID: z.string().min(1),
   SPOTIFY_CLIENT_SECRET: z.string().min(1),
   SPOTIFY_REFRESH_TOKEN: z.string().min(1),
-  UPSTASH_REDIS_REST_URL: z.url(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
+  // Provisioned by the Vercel Upstash integration under these names, not the
+  // UPSTASH_* ones Upstash's own dashboard hands out.
+  KV_REST_API_URL: z.url(),
+  KV_REST_API_TOKEN: z.string().min(1),
   RESEND_API_KEY: z.string().min(1),
   CONTACT_TO_EMAIL: z.email(),
   CRON_SECRET: z.string().min(16),

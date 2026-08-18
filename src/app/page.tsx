@@ -6,12 +6,14 @@ import { PinnedRepos } from "@/components/github/PinnedRepos";
 import { Stats } from "@/components/github/Stats";
 import { Reveal } from "@/components/motion/Reveal";
 import { ContactForm } from "@/components/ui/ContactForm";
+import { Experience } from "@/components/ui/Experience";
 import { Hero } from "@/components/ui/Hero";
+import { Intro } from "@/components/ui/Intro";
+import { MEASURE } from "@/components/ui/layout";
 import { Marquee } from "@/components/ui/Marquee";
 import { Section } from "@/components/ui/Section";
-import { Timeline } from "@/components/ui/Timeline";
-import { education } from "@/data/experience";
 import { site, skills } from "@/data/site";
+import { cn } from "@/lib/cn";
 import { getGitHubTracker } from "@/lib/github";
 
 /** Skeleton height matches the loaded grid so nothing shifts when it resolves. */
@@ -62,19 +64,14 @@ export default function HomePage() {
     <>
       <Hero />
 
-      <Reveal className="mx-auto max-w-3xl px-6 py-6">
+      <Intro />
+
+      <Reveal className="py-6">
         <Marquee items={skills} />
       </Reveal>
 
       <Section id="work" index="01" title="Work">
-        <Timeline />
-        <Reveal className="mt-6 border-ink-3 border-l py-4 pl-5">
-          <h3 className="font-medium text-ash-3 text-sm">
-            {education.school}
-            <span className="text-ash-1"> · {education.degree}</span>
-          </h3>
-          <p className="mt-1 font-mono text-[11px] text-ash-1">2022 — 2025</p>
-        </Reveal>
+        <Experience />
       </Section>
 
       <Section id="projects" index="02" title="On GitHub">
@@ -85,7 +82,7 @@ export default function HomePage() {
 
       <Section id="contact" index="03" title="Contact">
         <Reveal className="mb-6">
-          <p className="text-ash-2 leading-relaxed">
+          <p className={cn(MEASURE, "text-ash-2 leading-relaxed")}>
             Building something that needs to survive real users? Reach me at{" "}
             <a href={`mailto:${site.email}`} className="link-sweep text-ash-3">
               {site.email}

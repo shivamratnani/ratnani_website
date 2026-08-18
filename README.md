@@ -57,8 +57,9 @@ pnpm env:push preview        # preview
 gh secret set CRON_SECRET    # the Actions cron needs only this
 ```
 
-`UPSTASH_REDIS_REST_URL` / `_TOKEN` are injected by the Vercel Marketplace integration — do not
-set them by hand. Use **different** `CRON_SECRET`s and **separate Upstash databases** for Preview
+`KV_REST_API_URL` / `KV_REST_API_TOKEN` are injected by the Vercel Upstash integration — do not
+set them by hand. Note the integration provisions `KV_*` names, **not** the `UPSTASH_*` names
+Upstash's own dashboard gives you. Use **different** `CRON_SECRET`s and **separate Upstash databases** for Preview
 and Production, so preview deploys can never write into the production 7-day window.
 
 ## Spotify setup, once

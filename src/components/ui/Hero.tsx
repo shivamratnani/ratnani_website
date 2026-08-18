@@ -1,62 +1,65 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
-import {
-  riseVariants,
-  STAGGER,
-  staggerVariants,
-  staticVariants,
-} from "@/components/motion/transitions";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { useRef } from "react";
+import { DotField } from "@/components/motion/DotField";
+import { SplitText } from "@/components/motion/SplitText";
+import { DURATION, STAGGER } from "@/components/motion/transitions";
+import { SHELL } from "@/components/ui/layout";
 import { site } from "@/data/site";
+import { cn } from "@/lib/cn";
 
-const HEADLINE = "I build infrastructure that holds up under real load.";
-
-/** Words repeat, so keys are disambiguated once here rather than by list index. */
-const WORDS = HEADLINE.split(" ").map((word, index, all) => ({
-  word,
-  key: `${word}-${index}`,
-  trailing: index === all.length - 1 ? "" : " ",
-}));
-
+/**
+ * Screen one, and nothing else: the living dot mesh behind a single line.
+ * Everything that used to sit here — role, company, résumé summary — now lives
+ * in <Intro>, one screen down.
+ */
 export function Hero() {
+  const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+
+  // Content drifts up and fades as the section leaves, so the mesh is the last
+  // thing standing before the page proper begins.
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "-28%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
   return (
-    <section className="mx-auto max-w-3xl px-6 pt-20 pb-8 sm:pt-28">
+    <section
+      ref={ref}
+      // svh, not dvh: dvh would resize the canvas every time a mobile URL bar
+      // collapses, forcing a rebuild of the whole field mid-scroll.
+      className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden"
+    >
+      <DotField className="absolute inset-0 h-full w-full [mask-image:radial-gradient(ellipse_at_center,black_35%,transparent_78%)]" />
+
       <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={reduced ? staticVariants : staggerVariants(STAGGER.tight)}
+        style={reduced ? undefined : { y, opacity }}
+        className={cn(SHELL, "relative flex flex-1 flex-col justify-center py-24 sm:py-32")}
       >
-        <motion.p
-          variants={reduced ? staticVariants : riseVariants}
-          className="mb-6 font-mono text-[11px] text-ash-1 uppercase tracking-widest"
-        >
-          {site.role} · {site.company} · {site.location}
-        </motion.p>
-
-        <h1 className="max-w-2xl text-balance font-medium text-3xl text-ash-3 leading-[1.15] tracking-tight sm:text-4xl">
-          {WORDS.map(({ word, key, trailing }) => (
-            <motion.span
-              key={key}
-              variants={reduced ? staticVariants : riseVariants}
-              className="inline-block whitespace-pre"
-            >
-              {word}
-              {trailing}
-            </motion.span>
-          ))}
+        <h1 className="text-balance font-medium text-[clamp(2.5rem,10vw,8.5rem)] text-ash-3 leading-[0.95] tracking-tighter">
+          <SplitText by="char" trigger="mount" delayChildren={0.15}>
+            {site.tagline}
+          </SplitText>
         </h1>
-
-        <motion.p
-          variants={reduced ? staticVariants : riseVariants}
-          className="mt-6 max-w-xl text-ash-2 leading-relaxed"
-        >
-          Payments moving $10M+ a month, voice infrastructure carrying up to a million calls, and AI
-          pipelines clinicians actually sign off on. I work with founding teams to get systems from
-          scoping to production without breaking what already works.
-        </motion.p>
       </motion.div>
+
+      <motion.a
+        href="#intro"
+        aria-label="Scroll to introduction"
+        initial={reduced ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: STAGGER.loose * 8, duration: DURATION.slow }}
+        style={reduced ? undefined : { opacity }}
+        className="group relative z-10 flex flex-col items-center gap-3 pb-10 sm:pb-14"
+      >
+        <span className="font-mono text-[10px] text-ash-1 uppercase tracking-[0.2em] transition-colors group-hover:text-ash-2">
+          Scroll
+        </span>
+        <span className="relative h-10 w-px overflow-hidden bg-ink-3" aria-hidden="true">
+          <span className="absolute inset-x-0 h-1/2 animate-[scroll-cue_2.2s_var(--ease-out-expo)_infinite] bg-red motion-reduce:animate-none" />
+        </span>
+      </motion.a>
     </section>
   );
 }

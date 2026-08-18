@@ -53,7 +53,7 @@ export default function NowPage() {
       <Section id="now" index="—" title="Now">
         <Reveal className="space-y-6">
           <p className="text-ash-2 leading-relaxed">
-            Updated whenever something changes. Currently in New York, working on:
+            Updated whenever something changes. Currently in Manhattan, working on:
           </p>
           <ul className="space-y-3">
             {current.map((role) => (
