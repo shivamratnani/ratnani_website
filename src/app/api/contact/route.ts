@@ -41,7 +41,21 @@ export async function POST(request: Request) {
   }
 
   const { name, email, message } = parsed.data;
-  const env = requireEnv("RESEND_API_KEY", "CONTACT_TO_EMAIL");
+
+  // Read the mail config inside a guard rather than at the top level: unset
+  // credentials are an operator problem, and throwing here turns them into an
+  // opaque 500 for a visitor who just wrote a message. Name the address so the
+  // message still has somewhere to go.
+  let env: ReturnType<typeof requireEnv<"RESEND_API_KEY" | "CONTACT_TO_EMAIL">>;
+  try {
+    env = requireEnv("RESEND_API_KEY", "CONTACT_TO_EMAIL");
+  } catch (error) {
+    console.error("[contact]", error);
+    return Response.json(
+      { error: `Mail is not configured yet — please email ${site.email} directly.` },
+      { status: 503 },
+    );
+  }
 
   try {
     await new Resend(env.RESEND_API_KEY).emails.send({

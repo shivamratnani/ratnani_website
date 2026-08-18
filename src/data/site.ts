@@ -11,7 +11,7 @@ export const site = {
   /** The résumé summary. Lives here so the hero, the intro block, and the
    * generated OG image all read the same copy. */
   summary:
-    "Payments moving $10M+ a month, voice infrastructure carrying up to a million calls, and AI pipelines clinicians actually sign off on. I work with founding teams to get systems from scoping to production without breaking what already works.",
+    "Full-stack Forward Deployed Engineer with 2+ years building production systems at scale, from payment infrastructure processing $10M+ monthly to voice infrastructure carrying up to 1M AI calls a month. I help startups move fast without breaking things by architecting AI cloud-native solutions that handle real user load and real compliance constraints.",
   github: "shivamratnani",
   socials: [
     { label: "GitHub", href: "https://github.com/shivamratnani" },
@@ -24,6 +24,7 @@ export const site = {
     { label: "Photography", href: "/photography" },
     { label: "Blog", href: "/writing" },
     { label: "Now", href: "/now" },
+    { label: "Resume", href: "/resume" },
     { label: "Contact", href: "/#contact" },
   ],
 } as const;

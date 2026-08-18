@@ -10,9 +10,9 @@ const ENDPOINT = "https://api.github.com/graphql";
  * Streaks are derived from the calendar rather than fetched separately.
  */
 const QUERY = /* GraphQL */ `
-  query Tracker($login: String!) {
+  query Tracker($login: String!, $from: DateTime!, $to: DateTime!) {
     user(login: $login) {
-      contributionsCollection {
+      contributionsCollection(from: $from, to: $to) {
         contributionCalendar {
           totalContributions
           weeks {
@@ -39,6 +39,19 @@ const QUERY = /* GraphQL */ `
     }
   }
 `;
+
+/**
+ * 1 January of the current year through now, UTC — the window the heatmap
+ * covers. `to` is required: given only `from`, GitHub returns a full year and
+ * the grid runs months into the future as empty cells.
+ */
+function yearToDate(): { from: string; to: string } {
+  const now = new Date();
+  return {
+    from: new Date(Date.UTC(now.getUTCFullYear(), 0, 1)).toISOString(),
+    to: now.toISOString(),
+  };
+}
 
 const LEVELS = [
   "NONE",
@@ -195,7 +208,10 @@ async function fetchTracker(): Promise<GitHubTracker> {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ query: QUERY, variables: { login: site.github } }),
+    body: JSON.stringify({
+      query: QUERY,
+      variables: { login: site.github, ...yearToDate() },
+    }),
   });
 
   if (!response.ok) {

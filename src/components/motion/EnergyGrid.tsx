@@ -248,7 +248,7 @@ function bakeSprites(canvas: HTMLCanvasElement): Sprites {
     trails: {
       ash: bakeTrail(readToken(styles, "--color-ash-3", "#ededef")),
       deep: bakeTrail(readToken(styles, "--color-red-dim", "#b0170e")),
-      red: bakeTrail(readToken(styles, "--color-red", "#e5281d")),
+      red: bakeTrail(readToken(styles, "--color-red", "#b0170e")),
     },
     line: `rgb(${line})`,
   };

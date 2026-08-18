@@ -31,6 +31,14 @@ export function CountUp({ to, suffix = "", className }: CountUpProps) {
     };
   }, [inView, reduced, to, count]);
 
+  // The number is data, not decoration. If the in-view trigger never fires the
+  // tile would sit on a wrong value forever, so settle on the real one.
+  useEffect(() => {
+    if (reduced || inView) return;
+    const settle = setTimeout(() => setValue(to), 2000);
+    return () => clearTimeout(settle);
+  }, [inView, reduced, to]);
+
   return (
     <span ref={ref} className={className}>
       {value.toLocaleString()}

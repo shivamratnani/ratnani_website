@@ -14,13 +14,14 @@
   --color-ash-2: #a1a1aa;
   --color-ash-3: #ededef;
 
-  /* The pop. Verified 4.52:1 against --color-ink-0 — the darkest this hue goes
-   * while still clearing WCAG AA for normal text, which it has to: red is not
-   * decoration only, it carries the contact-form error, the 404, and the
-   * section indices. Darker than this and that copy fails.
-   * --color-red-dim is an accent behind larger marks (the grid's deep tone, the
-   * logo) and is deliberately below AA for text — never set copy in it. */
-  --color-red: #e5281d;
+  /* The pop. One red for the whole site — every accent, ramp step and canvas
+   * stroke is this hue or a transparency of it, so nothing drifts into a
+   * second red. Measures 2.89:1 against --color-ink-0: below WCAG AA for
+   * normal text, a deliberate trade for the darker tone. The places that set
+   * copy in it (the contact-form error, the 404, section indices) are short
+   * and paired with an ash-3 sibling, but they are the first thing to revisit
+   * if legibility ever comes up. */
+  --color-red: #b0170e;
   --color-red-dim: #b0170e;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
