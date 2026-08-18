@@ -4,7 +4,13 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { NowPlaying as NowPlayingData } from "@/lib/spotify";
 
-const POLL_MS = 30_000;
+/**
+ * One minute, not thirty seconds: each poll costs a Spotify request per
+ * visitor, and the app's quota is finite — 30s polling across a few open tabs
+ * is what once tripped Spotify's rate limit. The local ticker below keeps the
+ * progress bar smooth between polls.
+ */
+const POLL_MS = 60_000;
 /** How often the local progress estimate advances between polls. */
 const TICK_MS = 1_000;
 

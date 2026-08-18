@@ -8,9 +8,11 @@ import {
   MARK_DOTS,
   MARK_HEIGHT,
   MARK_WIDTH,
+  SCENE_FILL,
   SHARD_RADIUS,
   SHARD_RADIUS_SCENE,
   SHARDS,
+  type Tone,
 } from "@/data/mark";
 
 /** Seconds the idle shimmer takes to cross the whole mark. */
@@ -33,6 +35,18 @@ const FLIGHT = 720;
 const PHASE_SPREAD = 200;
 /** Spread within one dot, so its shards bead off it rather than burst. */
 const SHARD_SPREAD = 280;
+/** How long the fill layer's reveal is smeared across the scene's diagonal. */
+const FILL_SPREAD = 600;
+/** The fill layer's fade, in and out. Out is quick so the shards leave last. */
+const FILL_FADE = 300;
+
+/** The scene's tonal palette — the picture, in the site's own colours. */
+const TONE_COLOR: Record<Tone, string> = {
+  figure: "var(--color-ash-3)",
+  feather: "var(--color-ash-2)",
+  cloud: "var(--color-ash-1)",
+  sun: "var(--color-red)",
+};
 
 /** Milliseconds after landing before the mark comes apart on its own. */
 const AUTOPLAY_DELAY = 3000;
@@ -97,6 +111,23 @@ export function Logo({ className }: { className?: string }) {
         </g>
       ) : (
         <g pointerEvents="none">
+          {/* The dots the shards cannot account for: the picture's fine grain,
+           * fading in around the shards as they land. Never animated idle. */}
+          {SCENE_FILL.map((dot) => (
+            <circle
+              key={`${dot.x}-${dot.y}`}
+              r={1}
+              className="logo-shard"
+              fill={TONE_COLOR[dot.tone]}
+              style={{
+                transform: `translate(${dot.x}px, ${dot.y}px) scale(${SHARD_RADIUS_SCENE})`,
+                opacity: fallen ? 1 : 0,
+                transition: `opacity ${FILL_FADE}ms linear ${Math.round(
+                  fallen ? FLIGHT * 0.4 + dot.phase * FILL_SPREAD : (1 - dot.phase) * 120,
+                )}ms`,
+              }}
+            />
+          ))}
           {SHARDS.map((shard) => {
             const point = fallen ? shard.to : shard.from;
             const scale = fallen ? SHARD_RADIUS_SCENE : SHARD_RADIUS;
@@ -110,7 +141,7 @@ export function Logo({ className }: { className?: string }) {
                 key={`${shard.to.x}-${shard.to.y}`}
                 r={1}
                 className="logo-shard"
-                fill={fallen && shard.sun ? "var(--color-red)" : "currentColor"}
+                fill={fallen ? TONE_COLOR[shard.tone] : "currentColor"}
                 style={{
                   transform: `translate(${point.x}px, ${point.y}px) scale(${scale})`,
                   transition: `transform ${FLIGHT}ms var(--ease-out-expo) ${Math.round(phase * PHASE_SPREAD + lead * SHARD_SPREAD)}ms, fill ${FLIGHT}ms linear, opacity ${FLIGHT}ms linear`,
