@@ -175,19 +175,31 @@ async function backfillArtistArt(db: Redis, token: string): Promise<number> {
     .slice(0, 50);
   if (stale.length === 0) return 0;
 
-  const images = await artistImages(
+  const portraits = await artistImages(
     stale.map((artist) => artist.id),
     token,
   );
-  if (images.size === 0) return 0;
+
+  // Portraits are currently a 403 for this token, so fall back to covers we
+  // already hold. A track's `artist` field is its artist names joined in order,
+  // so the first is the primary artist — the one stored under this id.
+  const tracks = (await db.hgetall<Record<string, Track>>(KEY.trackMeta)) ?? {};
+  const covers = new Map<string, string>();
+  for (const track of Object.values(tracks)) {
+    const primary = track?.artist?.split(", ")[0];
+    if (primary && track.art && !covers.has(primary)) covers.set(primary, track.art);
+  }
 
   const pipeline = db.pipeline();
+  let filled = 0;
   for (const artist of stale) {
-    const art = images.get(artist.id);
-    if (art) pipeline.hset(KEY.artistMeta, { [artist.id]: { ...artist, art } });
+    const art = portraits.get(artist.id) ?? covers.get(artist.name);
+    if (!art) continue;
+    pipeline.hset(KEY.artistMeta, { [artist.id]: { ...artist, art } });
+    filled += 1;
   }
-  await pipeline.exec();
-  return images.size;
+  if (filled > 0) await pipeline.exec();
+  return filled;
 }
 
 export type PlayEvent = {
