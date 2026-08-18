@@ -96,7 +96,7 @@ export function Nav() {
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "relative block rounded-full px-3 py-1.5 text-xs transition-colors duration-300",
+                      "relative block rounded-full px-3 py-1.5 text-xs lowercase transition-colors duration-300",
                       active ? "text-ash-3" : "text-ash-1 hover:text-ash-2",
                     )}
                   >
@@ -160,7 +160,7 @@ export function Nav() {
                     onClick={() => setOpen(false)}
                     aria-current={isActive(item.href, pathname, section) ? "page" : undefined}
                     className={cn(
-                      "flex min-h-14 items-center border-ink-3/60 border-b text-lg transition-colors",
+                      "flex min-h-14 items-center border-ink-3/60 border-b text-lg lowercase transition-colors",
                       isActive(item.href, pathname, section) ? "text-ash-3" : "text-ash-2",
                     )}
                   >

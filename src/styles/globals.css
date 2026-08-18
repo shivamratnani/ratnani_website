@@ -14,9 +14,14 @@
   --color-ash-2: #a1a1aa;
   --color-ash-3: #ededef;
 
-  /* The pop. Verified 5.48:1 against --color-ink-0 (WCAG AA normal text). */
-  --color-red: #ff2d20;
-  --color-red-dim: #c41a10;
+  /* The pop. Verified 4.52:1 against --color-ink-0 — the darkest this hue goes
+   * while still clearing WCAG AA for normal text, which it has to: red is not
+   * decoration only, it carries the contact-form error, the 404, and the
+   * section indices. Darker than this and that copy fails.
+   * --color-red-dim is an accent behind larger marks (the grid's deep tone, the
+   * logo) and is deliberately below AA for text — never set copy in it. */
+  --color-red: #e5281d;
+  --color-red-dim: #b0170e;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;

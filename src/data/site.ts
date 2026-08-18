@@ -12,8 +12,6 @@ export const site = {
    * generated OG image all read the same copy. */
   summary:
     "Payments moving $10M+ a month, voice infrastructure carrying up to a million calls, and AI pipelines clinicians actually sign off on. I work with founding teams to get systems from scoping to production without breaking what already works.",
-  /** The whole of screen one. */
-  tagline: "just another grinder",
   github: "shivamratnani",
   socials: [
     { label: "GitHub", href: "https://github.com/shivamratnani" },
@@ -24,7 +22,7 @@ export const site = {
     { label: "Work", href: "/#work" },
     { label: "Projects", href: "/#projects" },
     { label: "Photography", href: "/photography" },
-    { label: "Writing", href: "/writing" },
+    { label: "Blog", href: "/writing" },
     { label: "Now", href: "/now" },
     { label: "Contact", href: "/#contact" },
   ],

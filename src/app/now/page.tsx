@@ -9,7 +9,7 @@ import { Section } from "@/components/ui/Section";
 import { TimeAgo } from "@/components/ui/TimeAgo";
 import { experience } from "@/data/experience";
 import { cn } from "@/lib/cn";
-import { getNowPlaying, getSpotifyWeek } from "@/lib/spotify";
+import { getNowPlaying, getSpotifySeason, getSpotifyWeek } from "@/lib/spotify";
 
 export const metadata: Metadata = {
   title: "Now",
@@ -23,10 +23,12 @@ function ListeningFallback() {
 async function Listening() {
   // Request-time island — see the note in app/page.tsx.
   await connection();
-  const week = await getSpotifyWeek();
+  // Both windows read the same per-day keys, so this is two aggregations over
+  // one dataset rather than a second source of truth.
+  const [week, season] = await Promise.all([getSpotifyWeek(), getSpotifySeason()]);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       <div className="grid gap-10 sm:grid-cols-2">
         <TopList
           title="Top tracks · 7 days"
@@ -34,8 +36,17 @@ async function Listening() {
         />
         <TopList title="Top artists · 7 days" entries={week.artists} />
       </div>
+
+      <div className="grid gap-10 sm:grid-cols-2">
+        <TopList
+          title="Top tracks · 7 weeks"
+          entries={season.tracks.map((track) => ({ ...track, sub: track.artist }))}
+        />
+        <TopList title="Top artists · 7 weeks" entries={season.artists} />
+      </div>
+
       <p className="font-mono text-[11px] text-ash-1">
-        Rolling 7-day window, aggregated from play history ·{" "}
+        Rolling windows over the same play history — the 7-week view fills in as the sync runs ·{" "}
         {week.syncedAt ? <TimeAgo value={week.syncedAt} prefix="synced " /> : "never synced"}
       </p>
     </div>

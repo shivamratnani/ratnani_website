@@ -21,7 +21,7 @@ export function TopList({ title, entries }: { title: string; entries: Entry[] })
       <h3 className="font-mono text-[11px] text-ash-1 uppercase tracking-widest">{title}</h3>
 
       {entries.length === 0 ? (
-        <p className="text-ash-1 text-sm">Nothing logged yet this week.</p>
+        <p className="text-ash-1 text-sm">Nothing logged yet.</p>
       ) : (
         <Stagger className="space-y-px">
           {entries.map((entry, index) => (

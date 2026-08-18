@@ -8,8 +8,14 @@ const TOKEN_URL = "https://accounts.spotify.com/api/token";
 const API = "https://api.spotify.com/v1";
 
 /** Days retained. One more than the 7 we report, so the window never underfills. */
-const RETENTION_DAYS = 8;
+/** Per-day keys live this long. Must exceed the widest reporting window below,
+ * with a day of slack so the oldest day is never expiring mid-read. */
+const RETENTION_DAYS = 50;
 const WINDOW_DAYS = 7;
+/** The long view: seven weeks. Only fills in as the sync runs — Spotify's
+ * recently-played endpoint returns the last 50 plays and nothing older, so
+ * there is no way to backfill a window that predates the first sync. */
+const SEASON_DAYS = 49;
 const TTL_SECONDS = RETENTION_DAYS * 24 * 60 * 60;
 
 const KEY = {
@@ -293,15 +299,24 @@ const EMPTY_WEEK: SpotifyWeek = { tracks: [], artists: [], syncedAt: null };
  * with no credentials — from breaking the page.
  */
 export async function getSpotifyWeek(limit = 8): Promise<SpotifyWeek> {
+  return read(WINDOW_DAYS, limit);
+}
+
+/** The same aggregation over seven weeks rather than seven days. */
+export async function getSpotifySeason(limit = 8): Promise<SpotifyWeek> {
+  return read(SEASON_DAYS, limit);
+}
+
+async function read(days: number, limit: number): Promise<SpotifyWeek> {
   try {
-    return await readWeek(limit);
+    return await readWindow(days, limit);
   } catch (error) {
     console.error("[spotify]", error);
     return EMPTY_WEEK;
   }
 }
 
-async function readWeek(limit: number): Promise<SpotifyWeek> {
+async function readWindow(days: number, limit: number): Promise<SpotifyWeek> {
   "use cache";
   cacheLife("minutes");
 
@@ -309,10 +324,10 @@ async function readWeek(limit: number): Promise<SpotifyWeek> {
   // config is missing, and throwing between Promise.all's arguments would leave
   // the promises already built by the earlier arguments unhandled.
   const db = redis();
-  const days = windowDays(Date.now());
+  const window = windowDays(Date.now(), days);
   const [trackTotals, artistTotals, syncedAt] = await Promise.all([
-    rank(db, KEY.trackPlays, days),
-    rank(db, KEY.artistPlays, days),
+    rank(db, KEY.trackPlays, window),
+    rank(db, KEY.artistPlays, window),
     db.get<number>(KEY.syncedAt),
   ]);
 

@@ -5,7 +5,7 @@ import { Section } from "@/components/ui/Section";
 import { formatDate, getPosts } from "@/lib/mdx";
 
 export const metadata: Metadata = {
-  title: "Writing",
+  title: "Blog",
   description: "Notes on systems that had to work.",
 };
 
@@ -13,7 +13,7 @@ export default async function WritingPage() {
   const posts = await getPosts();
 
   return (
-    <Section id="writing" index="—" title="Writing">
+    <Section id="writing" index="—" title="Blog">
       {posts.length === 0 ? (
         <p className="text-ash-1">Nothing published yet.</p>
       ) : (

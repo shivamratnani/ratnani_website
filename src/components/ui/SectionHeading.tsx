@@ -30,7 +30,7 @@ export function SectionHeading({ index, title }: { index?: string; title: string
           {index}
         </motion.span>
       ) : null}
-      <h2 className="font-medium text-ash-3 text-xl tracking-tight sm:text-2xl">
+      <h2 className="font-medium text-ash-3 text-xl lowercase tracking-tight sm:text-2xl">
         <SplitText>{title}</SplitText>
       </h2>
       <motion.span
