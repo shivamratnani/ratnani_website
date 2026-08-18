@@ -3,11 +3,17 @@ export const site = {
   shortName: "Shiv",
   role: "Forward Deployed Engineer",
   company: "CollectWise",
-  location: "New York, NY",
+  location: "Manhattan, NY",
   email: "shiv@ratnani.org",
   url: "https://sh1v.com",
   description:
     "Forward Deployed Engineer at CollectWise. I build payment, voice, and AI infrastructure that holds up under real load and real compliance constraints.",
+  /** The résumé summary. Lives here so the hero, the intro block, and the
+   * generated OG image all read the same copy. */
+  summary:
+    "Payments moving $10M+ a month, voice infrastructure carrying up to a million calls, and AI pipelines clinicians actually sign off on. I work with founding teams to get systems from scoping to production without breaking what already works.",
+  /** The whole of screen one. */
+  tagline: "just another grinder",
   github: "shivamratnani",
   socials: [
     { label: "GitHub", href: "https://github.com/shivamratnani" },

@@ -35,6 +35,9 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    /* The full-bleed shell means any stray wide child would scroll the page
+     * sideways on a phone. Clip it at the root rather than hunting per-child. */
+    overflow-x: clip;
   }
 
   body {
@@ -44,6 +47,10 @@
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    /* Notched phones in landscape: keeps the shell gutters clear of the cutout.
+     * Resolves to 0 everywhere else. */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   :focus-visible {
@@ -85,8 +92,46 @@
   }
 }
 
+/* Underline that draws itself across the full row. Same mechanic as
+ * link-sweep, but driven by a parent's hover/open state rather than its own. */
+@utility rule-sweep {
+  background-image: linear-gradient(var(--color-red), var(--color-red));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size 600ms var(--ease-out-expo);
+}
+
 @keyframes marquee {
   to {
     transform: translateX(-100%);
+  }
+}
+
+/* Logo idle: a shimmer travelling across the dot matrix. Each dot carries its
+ * own animation-delay, so one keyframe drives the whole wave on the compositor. */
+@keyframes dot-shimmer {
+  0%,
+  70%,
+  100% {
+    opacity: 0.35;
+  }
+  35% {
+    opacity: 1;
+  }
+}
+
+/* Scroll cue: a bead falling down its rail, then resetting. */
+@keyframes scroll-cue {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
   }
 }

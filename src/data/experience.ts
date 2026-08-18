@@ -6,6 +6,8 @@ export type Role = {
   end: string | "Present";
   /** Recent roles render expanded; the rest sit behind the "earlier" toggle. */
   tier: "primary" | "earlier";
+  /** The single collapsed line. Condensed from `summary` — never longer. */
+  tagline: string;
   summary: string;
   highlights?: readonly string[];
 };
@@ -27,6 +29,7 @@ export const experience: readonly Role[] = [
     start: "2026-01",
     end: "Present",
     tier: "primary",
+    tagline: "Payment, voice, and observability infrastructure across 20+ enterprise accounts",
     summary:
       "FDE on the founding team, owning end-to-end client integrations and the payment, voice, and observability infrastructure underneath them.",
     highlights: [
@@ -44,6 +47,7 @@ export const experience: readonly Role[] = [
     start: "2026-01",
     end: "Present",
     tier: "primary",
+    tagline: "Architecture and technical direction after shipping the first version",
     summary: "Advising on architecture and technical direction after building the first version.",
   },
   {
@@ -53,6 +57,7 @@ export const experience: readonly Role[] = [
     start: "2025-11",
     end: "2026-01",
     tier: "primary",
+    tagline: "First engineer — built the initial product and infrastructure",
     summary: "First engineer; built the initial product and infrastructure.",
   },
   {
@@ -62,6 +67,7 @@ export const experience: readonly Role[] = [
     start: "2025-05",
     end: "2025-11",
     tier: "primary",
+    tagline: "Clinician recordings to SOAP notes and billing codes, straight into the EHR",
     summary:
       "Led architecture for a healthcare AI platform turning clinician recordings into SOAP notes and billing codes delivered straight into an EHR.",
     highlights: [
@@ -81,6 +87,7 @@ export const experience: readonly Role[] = [
     start: "2024-12",
     end: "2025-11",
     tier: "primary",
+    tagline: "Swift/SwiftUI iOS app with real-time sync, 500+ beta users",
     summary:
       "Built an iOS application in Swift/SwiftUI serving 500+ beta users with real-time data synchronization.",
   },
@@ -91,6 +98,7 @@ export const experience: readonly Role[] = [
     start: "2024-05",
     end: "2025-01",
     tier: "primary",
+    tagline: "Textbooks and lecture notes into collaborative knowledge bases for 1,000+ users",
     summary:
       "Founded a secure educational platform turning textbooks, transcripts, and notes into collaborative knowledge bases for 1,000+ users.",
     highlights: [
@@ -106,6 +114,7 @@ export const experience: readonly Role[] = [
     start: "2024-07",
     end: "2024-08",
     tier: "earlier",
+    tagline: "21 critical bugs cleared in an AngularJS app serving 300,000+ users",
     summary:
       "Resolved 21 critical bugs in AccessHub's AngularJS app for 300,000+ active users; built a Windows C# client and monitored API performance with DataDog.",
   },
@@ -116,6 +125,7 @@ export const experience: readonly Role[] = [
     start: "2023-10",
     end: "2024-04",
     tier: "earlier",
+    tagline: "Full-stack React and Next.js work, plus a reusable cross-browser UI kit",
     summary:
       "Built full-stack applications with React, Next.js, and TypeScript, delivering reusable cross-browser UI components.",
   },
@@ -126,6 +136,7 @@ export const experience: readonly Role[] = [
     start: "2023-12",
     end: "2024-03",
     tier: "earlier",
+    tagline: "React Native social app with real-time messaging and a recommended feed",
     summary:
       "Built a cross-platform React Native social app with real-time messaging, profiles, and a recommended feed, containerized with Docker over MySQL.",
   },
@@ -136,6 +147,7 @@ export const experience: readonly Role[] = [
     start: "2023-08",
     end: "2024-12",
     tier: "earlier",
+    tagline: "Interactive visualization of solar output across seven arrays in Deerfield, WI",
     summary:
       "Built an interactive visualization of solar output across seven arrays in Deerfield, WI using Svelte, Vite, and Plotly.js, backed by Firebase and GitHub Actions.",
   },
@@ -146,6 +158,7 @@ export const experience: readonly Role[] = [
     start: "2021-07",
     end: "2021-08",
     tier: "earlier",
+    tagline: "Network and account administration across Google Admin Suite and Windows",
     summary:
       "Administered network and user accounts across Google Admin Suite and Windows, provisioned machines, and authored internal documentation.",
   },

@@ -26,5 +26,16 @@ if (!value) {
   process.exit(1);
 }
 
+// Credentials never contain whitespace. A value that does is almost always a
+// stray clipboard grab, and writing it produces a confusing auth failure much
+// later instead of an obvious one here.
+if (/\s/.test(value)) {
+  console.error(
+    `Refusing to write ${key}: the value contains whitespace, so it is very ` +
+      "likely not a credential. Copy the value itself and try again.",
+  );
+  process.exit(1);
+}
+
 await upsertEnvFile(join(process.cwd(), ".env.local"), key, value);
 console.log(`✓ ${key} written to .env.local (${value.length} chars)`);
