@@ -156,6 +156,34 @@ async function artistImages(ids: string[], token: string): Promise<Map<string, s
   return images;
 }
 
+/**
+ * Fills in art for artists stored without it. Runs on every sync, independent
+ * of whether anything new was played: art only ever arrived alongside a play,
+ * so a quiet day would otherwise leave those rows blank indefinitely. Bounded
+ * to one request by the endpoint's 50-id ceiling.
+ */
+async function backfillArtistArt(db: Redis, token: string): Promise<number> {
+  const stored = (await db.hgetall<Record<string, Artist>>(KEY.artistMeta)) ?? {};
+  const stale = Object.values(stored)
+    .filter((artist) => artist && !artist.art)
+    .slice(0, 50);
+  if (stale.length === 0) return 0;
+
+  const images = await artistImages(
+    stale.map((artist) => artist.id),
+    token,
+  );
+  if (images.size === 0) return 0;
+
+  const pipeline = db.pipeline();
+  for (const artist of stale) {
+    const art = images.get(artist.id);
+    if (art) pipeline.hset(KEY.artistMeta, { [artist.id]: { ...artist, art } });
+  }
+  await pipeline.exec();
+  return images.size;
+}
+
 export type PlayEvent = {
   playedAt: number;
   track: Track;
@@ -223,6 +251,9 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
 
   const payload = await api(`/me/player/recently-played?${query}`, token);
   const { items } = recentSchema.parse(payload);
+
+  await backfillArtistArt(db, token);
+
   if (items.length === 0) {
     await db.set(KEY.syncedAt, now);
     return { ingested: 0 };
@@ -258,17 +289,6 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
   // Hydrate art before the pipeline is built, so the meta written below is
   // complete rather than needing a second pass.
   const wanted = new Set(events.flatMap((event) => (event.artist ? [event.artist.id] : [])));
-
-  // Top the request up with artists stored before this existed, so their rows
-  // stop rendering a blank square instead of waiting to be played again. The
-  // 50-id ceiling is the endpoint's, so this costs no extra request.
-  const stored = (await db.hgetall<Record<string, Artist>>(KEY.artistMeta)) ?? {};
-  const stale = Object.values(stored).filter((artist) => artist && !artist.art);
-  for (const artist of stale) {
-    if (wanted.size >= 50) break;
-    wanted.add(artist.id);
-  }
-
   const images = await artistImages([...wanted], token);
   for (const event of events) {
     if (event.artist) event.artist.art = images.get(event.artist.id) ?? null;
@@ -291,13 +311,6 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
     }
     pipeline.expire(KEY.trackPlays(day), TTL_SECONDS);
     pipeline.expire(KEY.artistPlays(day), TTL_SECONDS);
-  }
-
-  // Write back the artists that were only in the request for a backfill; they
-  // have no play in this batch, so nothing above would have persisted them.
-  for (const artist of stale) {
-    const art = images.get(artist.id);
-    if (art) pipeline.hset(KEY.artistMeta, { [artist.id]: { ...artist, art } });
   }
 
   pipeline.set(KEY.cursor, newest);
