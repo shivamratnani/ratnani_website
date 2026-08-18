@@ -6,6 +6,8 @@ export type Role = {
   end: string | "Present";
   /** Recent roles render expanded; the rest sit behind the "earlier" toggle. */
   tier: "primary" | "earlier";
+  /** Public site for the company, shown under the summary where present. */
+  url?: string;
   /** The single collapsed line. Condensed from `summary` — never longer. */
   tagline: string;
   summary: string;
@@ -29,6 +31,7 @@ export const experience: readonly Role[] = [
     start: "2026-01",
     end: "Present",
     tier: "primary",
+    url: "https://collectwise.com",
     tagline: "Payment, voice, and observability infrastructure across 20+ enterprise accounts",
     summary:
       "FDE on the founding team, owning end-to-end client integrations and the payment, voice, and observability infrastructure underneath them.",
@@ -41,14 +44,27 @@ export const experience: readonly Role[] = [
     ],
   },
   {
+    company: "Paradym",
+    title: "Co-Founder",
+    location: "Remote",
+    start: "2026-06",
+    end: "Present",
+    tier: "primary",
+    url: "https://paradym.space",
+    tagline: "Outside-in reliability for the MCP servers agents depend on",
+    summary:
+      "Watching the MCP servers agents are built on: silent changes get caught, confirmed, and turned into ready-made pull requests before users notice.",
+  },
+  {
     company: "Alura",
     title: "Technical Advisor",
     location: "San Francisco, CA",
     start: "2026-01",
     end: "Present",
     tier: "primary",
-    tagline: "Architecture and technical direction after shipping the first version",
-    summary: "Advising on architecture and technical direction after building the first version.",
+    url: "https://www.alura.love",
+    tagline: "Architecture and technical direction after shipping v0",
+    summary: "Advising on architecture and technical direction after building v0.",
   },
   {
     company: "Alura",
@@ -57,7 +73,7 @@ export const experience: readonly Role[] = [
     start: "2025-11",
     end: "2026-01",
     tier: "primary",
-    tagline: "First engineer — built the initial product and infrastructure",
+    tagline: "First engineer — built v0 and the infrastructure under it",
     summary: "First engineer; built the initial product and infrastructure.",
   },
   {

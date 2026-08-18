@@ -144,7 +144,11 @@ export function Experience() {
         </div>
       </Reveal>
 
-      <div className="border-ink-3 border-b">
+      <Reveal className="mb-3">
+        <h3 className="font-mono text-[11px] text-ash-1 uppercase tracking-widest">Experience</h3>
+      </Reveal>
+
+      <div className="border-ink-3 border-t border-b">
         {primary.map((role) => (
           <RoleRow key={`${role.company}-${role.start}`} role={role} />
         ))}

@@ -32,7 +32,7 @@ export function Stagger({
       ? { animate: "visible" as const }
       : {
           whileInView: "visible" as const,
-          viewport: { once: true, margin: "0px 0px -12% 0px" },
+          viewport: { once: true, amount: 0.2 },
         };
 
   return (

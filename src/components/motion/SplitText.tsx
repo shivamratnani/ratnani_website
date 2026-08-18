@@ -34,7 +34,7 @@ export function SplitText({
   const enter =
     trigger === "mount"
       ? { animate: "visible" as const }
-      : { whileInView: "visible" as const, viewport: { once: true, margin: "0px 0px -10% 0px" } };
+      : { whileInView: "visible" as const, viewport: { once: true, amount: 0.2 } };
 
   return (
     <motion.span

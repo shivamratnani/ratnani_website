@@ -14,7 +14,7 @@ type CountUpProps = {
 /** Animates 0 → `to` once, when scrolled into view. */
 export function CountUp({ to, suffix = "", className }: CountUpProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "0px 0px -10% 0px" });
+  const inView = useInView(ref, { once: true, amount: 0.2 });
   const reduced = useReducedMotion();
   const [value, setValue] = useState(reduced ? to : 0);
   const count = useMotionValue(0);

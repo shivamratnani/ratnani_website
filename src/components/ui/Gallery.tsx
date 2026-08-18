@@ -49,7 +49,7 @@ export function Gallery({ photos }: { photos: readonly Photo[] }) {
             className="block w-full overflow-hidden rounded-lg"
             initial={reduced ? false : { opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "0px 0px -8% 0px" }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={
               reduced ? { duration: 0 } : { duration: DURATION.base, ease: EASE_OUT_EXPO }
             }

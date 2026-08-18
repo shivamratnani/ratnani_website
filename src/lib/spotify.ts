@@ -439,6 +439,62 @@ const nowPlayingSchema = z.object({
     .nullable(),
 });
 
+const playlistsSchema = z.object({
+  items: z.array(
+    z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        external_urls: z.object({ spotify: z.string() }),
+        images: imageSchema.nullable(),
+        tracks: z.object({ total: z.number() }).nullable(),
+        public: z.boolean().nullable(),
+      })
+      .nullable(),
+  ),
+});
+
+export type Playlist = {
+  id: string;
+  name: string;
+  url: string;
+  art: string | null;
+  tracks: number;
+};
+
+/**
+ * Public playlists, newest first. Returns an empty list rather than throwing:
+ * this needs `playlist-read-private`, which the stored refresh token may predate,
+ * and a missing scope should hide the section rather than break the page.
+ */
+export async function getPlaylists(limit = 8): Promise<Playlist[]> {
+  try {
+    const payload = await api(
+      `/me/playlists?limit=${Math.min(50, limit * 3)}`,
+      await accessToken(),
+    );
+    return playlistsSchema
+      .parse(payload)
+      .items.flatMap((item) =>
+        item && item.public !== false
+          ? [
+              {
+                id: item.id,
+                name: item.name,
+                url: item.external_urls.spotify,
+                art: item.images?.at(0)?.url ?? null,
+                tracks: item.tracks?.total ?? 0,
+              },
+            ]
+          : [],
+      )
+      .slice(0, limit);
+  } catch (error) {
+    console.warn("[spotify] playlists unavailable:", error);
+    return [];
+  }
+}
+
 export type NowPlaying = {
   name: string;
   artist: string;

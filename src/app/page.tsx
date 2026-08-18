@@ -11,6 +11,12 @@ import { Hero } from "@/components/ui/Hero";
 import { Intro } from "@/components/ui/Intro";
 import { MEASURE } from "@/components/ui/layout";
 import { Marquee } from "@/components/ui/Marquee";
+import {
+  ListeningPreview,
+  ListeningPreviewFallback,
+  NowLine,
+  NowPanel,
+} from "@/components/ui/NowPanel";
 import { Section } from "@/components/ui/Section";
 import { site, skills } from "@/data/site";
 import { cn } from "@/lib/cn";
@@ -70,17 +76,30 @@ export default function HomePage() {
         <Marquee items={skills} />
       </Reveal>
 
-      <Section id="work" index="01" title="Work">
+      <Section id="now" index="01" title="Now">
+        <NowPanel>
+          <Suspense fallback={<ListeningPreviewFallback />}>
+            <ListeningPreview />
+          </Suspense>
+        </NowPanel>
+        <Reveal className="mt-10 border-ink-3 border-t pt-6">
+          <Suspense fallback={null}>
+            <NowLine />
+          </Suspense>
+        </Reveal>
+      </Section>
+
+      <Section id="work" index="02" title="Work">
         <Experience />
       </Section>
 
-      <Section id="projects" index="02" title="On GitHub">
+      <Section id="projects" index="03" title="On GitHub">
         <Suspense fallback={<TrackerFallback />}>
           <Tracker />
         </Suspense>
       </Section>
 
-      <Section id="contact" index="03" title="Contact">
+      <Section id="contact" index="04" title="Contact">
         <Reveal className="mb-6">
           <p className={cn(MEASURE, "mx-auto text-center text-ash-2 leading-relaxed")}>
             Building something that needs to survive real users? Reach me at{" "}
