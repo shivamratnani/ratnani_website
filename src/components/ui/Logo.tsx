@@ -113,8 +113,12 @@ export function Logo({ className }: { className?: string }) {
                 fill={fallen && shard.sun ? "var(--color-red)" : "currentColor"}
                 style={{
                   transform: `translate(${point.x}px, ${point.y}px) scale(${scale})`,
-                  transition: `transform ${FLIGHT}ms var(--ease-out-expo) ${Math.round(phase * PHASE_SPREAD + lead * SHARD_SPREAD)}ms, fill ${FLIGHT}ms linear`,
-                  animation: `dot-shimmer ${SHIMMER_PERIOD}s var(--ease-out-expo) ${(shard.phase * SHIMMER_PERIOD).toFixed(3)}s infinite`,
+                  transition: `transform ${FLIGHT}ms var(--ease-out-expo) ${Math.round(phase * PHASE_SPREAD + lead * SHARD_SPREAD)}ms, fill ${FLIGHT}ms linear, opacity ${FLIGHT}ms linear`,
+                  // The shimmer belongs to the mark. Once the dots land it has
+                  // to stop, or the wave eats holes in the picture they form.
+                  animation: fallen
+                    ? undefined
+                    : `dot-shimmer ${SHIMMER_PERIOD}s var(--ease-out-expo) ${(shard.phase * SHIMMER_PERIOD).toFixed(3)}s infinite`,
                 }}
               />
             );

@@ -55,49 +55,47 @@ export const MARK_DOTS: readonly MarkDot[] = markPoints.map((point) => ({
  * mark's, because every dot here is a shard of a dot up there.
  */
 const ICARUS = [
-  "..........................o...o...o.",
-  "...........................o.....o..",
-  "................#..#.........ooo....",
-  ".#.........#................ooooo...",
-  ".##..........#...#.#..#.ooo.ooooo.oo",
-  "..##.....#..................ooooo...",
-  "...##.........#.#...#........ooo....",
-  ".#..##...............#.....o.....o..",
-  ".##..##...#.......#.......o...o...o.",
-  "...#..##.......#...#...#.o....o....o",
-  "....##..#.............#.....#.o.....",
-  ".##..###.##.#.......##..#..####..#..",
-  "..###..##.##........#..#.###..##...#",
-  "....###.######.....##...###.....#...",
-  "......###.#####....#..#######.##....",
-  "..###...###.####...######..####..##.",
-  ".....####..#####....#####......#....",
-  "........#######...#####.............",
-  "....####...###...#####............#.",
-  "........######...####...........#...",
-  "..........####....##...............#",
-  "........##.##.............#.........",
-  ".......#####.#..#....#####.#####....",
-  "#######.....#.##.####......#....####",
+  ".......#....#......#.o...o..o.",
+  "..#..#....##.........o......o.",
+  "........#......#.#.....oooo...",
+  "....#..#.....#........oooooo..",
+  "##.#......#........oo.oooooo.o",
+  ".##...#....#...#......oooooo..",
+  ".####.........#........oooo...",
+  "....##...#........#..o......o.",
+  "##..###.#.......#....o...o..o#",
+  ".###...##...#.................",
+  "...###..##.....#....#....o...#",
+  ".....###..##..##....#.####....",
+  "##.....###.##..#...####..####.",
+  "..###....###.####..###.#.##...",
+  ".....####...###.#######.##...#",
+  "........####..#..########.#...",
+  ".##########......###.#........",
+  ".........##.....####....#..#..",
+  "......###......####.#.........",
+  "...####......#..##.....#...##.",
+  ".................#......#.#...",
+  "#.##.##.##.##.##.##.##.##.##.#",
 ] as const;
 
 /** Mark units per Icarus cell. Big enough that the scene reads at nav size. */
-const SCENE_PITCH = 5;
+const SCENE_PITCH = 6.5;
 /**
  * The scene hangs below the mark rather than replacing it in place: the header
  * is only ~30px tall, and Icarus needs room to fall. Offsets are mark units
  * from the mark's own origin, so the drop clears a `py-4` header.
  */
-const SCENE_X = -4;
-const SCENE_Y = 50;
+const SCENE_X = -6;
+const SCENE_Y = 46;
 
 /** Sub-dots per mark dot. Idle they overlap into one dot; hover breaks them up. */
-export const SHARDS_PER_DOT = 8;
+export const SHARDS_PER_DOT = 7;
 /** How far off its parent's centre a shard sits while the mark is at rest. */
 const CLUSTER_RADIUS = 0.52;
 /** Idle and hover radii. Eight idle shards union to roughly `DOT_RADIUS`. */
 export const SHARD_RADIUS = 0.66;
-export const SHARD_RADIUS_SCENE = 1.7;
+export const SHARD_RADIUS_SCENE = 2.75;
 
 export type Shard = {
   /** Resting position, clustered on the parent dot. */
