@@ -107,7 +107,7 @@ const recentSchema = z.object({
         id: z.string().nullable(),
         name: z.string(),
         external_urls: z.object({ spotify: z.string() }),
-        album: z.object({ images: imageSchema }),
+        album: z.object({ name: z.string(), images: imageSchema }),
         artists: z
           .array(
             z.object({
@@ -501,28 +501,58 @@ export type NowPlaying = {
   album: string;
   url: string;
   art: string | null;
-  /** Both in ms, for the progress bar. Null when Spotify omits them. */
+  /** False when this is the last thing played rather than the current track. */
+  playing: boolean;
+  /** Both in ms, for the progress bar. Null unless something is playing. */
   progressMs: number | null;
   durationMs: number | null;
 } | null;
 
 /** Currently playing track, or null when nothing is. Never cached. */
 export async function getNowPlaying(): Promise<NowPlaying> {
-  const payload = await api("/me/player/currently-playing", await accessToken());
-  if (!payload) return null;
+  const token = await accessToken();
+  const payload = await api("/me/player/currently-playing", token);
+  const parsed = payload ? nowPlayingSchema.safeParse(payload) : null;
 
-  const parsed = nowPlayingSchema.safeParse(payload);
-  if (!parsed.success || !parsed.data.is_playing || !parsed.data.item) return null;
+  if (parsed?.success && parsed.data.is_playing && parsed.data.item) {
+    const { item } = parsed.data;
+    return {
+      name: item.name,
+      artist: item.artists.map((a) => a.name).join(", "),
+      album: item.album.name,
+      url: item.external_urls.spotify,
+      // First image, not last: this one is rendered large enough to want it.
+      art: item.album.images.at(0)?.url ?? null,
+      playing: true,
+      progressMs: parsed.data.progress_ms ?? null,
+      durationMs: item.duration_ms ?? null,
+    };
+  }
 
-  const { item } = parsed.data;
-  return {
-    name: item.name,
-    artist: item.artists.map((a) => a.name).join(", "),
-    album: item.album.name,
-    url: item.external_urls.spotify,
-    // First image, not last: this one is rendered large enough to want it.
-    art: item.album.images.at(0)?.url ?? null,
-    progressMs: parsed.data.progress_ms ?? null,
-    durationMs: item.duration_ms ?? null,
-  };
+  // Nothing playing: show the last thing that was, rather than an empty line.
+  return lastPlayed(token);
+}
+
+/** The most recent play, or null if the history is empty or unreadable. */
+async function lastPlayed(token: string): Promise<NowPlaying> {
+  try {
+    const payload = await api("/me/player/recently-played?limit=1", token);
+    const item = recentSchema.parse(payload).items[0];
+    if (!item) return null;
+
+    const { track } = item;
+    return {
+      name: track.name,
+      artist: track.artists.map((a) => a.name).join(", "),
+      album: track.album.name,
+      url: track.external_urls.spotify,
+      art: track.album.images.at(0)?.url ?? null,
+      playing: false,
+      progressMs: null,
+      durationMs: null,
+    };
+  } catch (error) {
+    console.warn("[spotify] recent history unavailable:", error);
+    return null;
+  }
 }

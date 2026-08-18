@@ -11,12 +11,7 @@ import { Hero } from "@/components/ui/Hero";
 import { Intro } from "@/components/ui/Intro";
 import { MEASURE } from "@/components/ui/layout";
 import { Marquee } from "@/components/ui/Marquee";
-import {
-  ListeningPreview,
-  ListeningPreviewFallback,
-  NowLine,
-  NowPanel,
-} from "@/components/ui/NowPanel";
+import { ListeningPreview, ListeningPreviewFallback, NowPanel } from "@/components/ui/NowPanel";
 import { Section } from "@/components/ui/Section";
 import { site, skills } from "@/data/site";
 import { cn } from "@/lib/cn";
@@ -82,11 +77,6 @@ export default function HomePage() {
             <ListeningPreview />
           </Suspense>
         </NowPanel>
-        <Reveal className="mt-10 border-ink-3 border-t pt-6">
-          <Suspense fallback={null}>
-            <NowLine />
-          </Suspense>
-        </Reveal>
       </Section>
 
       <Section id="work" index="02" title="Work">

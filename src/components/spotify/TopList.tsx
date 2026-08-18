@@ -6,7 +6,6 @@ type Entry = {
   name: string;
   url: string;
   art: string | null;
-  plays: number;
   /** Secondary line — artist name for tracks, omitted for artists. */
   sub?: string;
 };
@@ -54,10 +53,6 @@ export function TopList({ title, entries }: { title: string; entries: Entry[] })
                   {entry.sub ? (
                     <span className="block truncate text-ash-1 text-xs">{entry.sub}</span>
                   ) : null}
-                </span>
-
-                <span className="shrink-0 font-mono text-[11px] text-ash-1 tabular-nums">
-                  {entry.plays}
                 </span>
               </a>
             </StaggerItem>

@@ -43,13 +43,13 @@ export function NowPlaying({ initial }: { initial: NowPlayingData }) {
   // Advance locally between polls so the bar moves rather than stepping every
   // 30 seconds. Clamped to the track length; the next poll is the source of truth.
   useEffect(() => {
-    if (!track?.durationMs) return;
+    if (!track?.playing || !track.durationMs) return;
     const id = setInterval(
       () => setProgress((value) => Math.min(track.durationMs ?? 0, value + TICK_MS)),
       TICK_MS,
     );
     return () => clearInterval(id);
-  }, [track?.durationMs]);
+  }, [track?.playing, track?.durationMs]);
 
   if (!track) {
     return (
@@ -60,7 +60,9 @@ export function NowPlaying({ initial }: { initial: NowPlayingData }) {
     );
   }
 
-  const percent = track.durationMs ? Math.min(100, (progress / track.durationMs) * 100) : null;
+  // The bar is meaningless for a track that has already finished.
+  const percent =
+    track.playing && track.durationMs ? Math.min(100, (progress / track.durationMs) * 100) : null;
 
   return (
     <a
@@ -84,11 +86,15 @@ export function NowPlaying({ initial }: { initial: NowPlayingData }) {
 
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2 font-mono text-[10px] text-ash-1 uppercase tracking-widest">
-          <span className="relative flex size-1.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-red opacity-75 motion-reduce:animate-none" />
-            <span className="relative inline-flex size-1.5 rounded-full bg-red" />
-          </span>
-          Now playing
+          {track.playing ? (
+            <span className="relative flex size-1.5">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-red opacity-75 motion-reduce:animate-none" />
+              <span className="relative inline-flex size-1.5 rounded-full bg-red" />
+            </span>
+          ) : (
+            <span className="size-1.5 rounded-full bg-ash-1" />
+          )}
+          {track.playing ? "Now playing" : "Last played"}
         </span>
 
         <span className="mt-1 block truncate text-ash-3 text-sm">{track.name}</span>

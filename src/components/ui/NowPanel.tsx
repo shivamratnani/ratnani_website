@@ -20,10 +20,14 @@ export function ListeningPreviewFallback() {
 export async function ListeningPreview() {
   // Request-time island inside a prerendered shell — see the note in app/page.tsx.
   await connection();
-  const week = await getSpotifyWeek(LIMIT);
+  const [week, playing] = await Promise.all([
+    getSpotifyWeek(LIMIT),
+    getNowPlaying().catch(() => null),
+  ]);
 
   return (
     <div className="space-y-8">
+      <NowPlaying initial={playing} />
       {/* Side by side: stacked, the two lists ran twice the height of the roles
        * beside them and left the left column empty. */}
       <div className="grid gap-8 sm:grid-cols-2">
@@ -35,13 +39,6 @@ export async function ListeningPreview() {
       </div>
     </div>
   );
-}
-
-/** The playing line runs the full width under both columns, so it reads as a
- * footer for the whole section rather than part of the listening column. */
-export async function NowLine() {
-  await connection();
-  return <NowPlaying initial={await getNowPlaying().catch(() => null)} />;
 }
 
 /**
