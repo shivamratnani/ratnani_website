@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PlayEvent, Track } from "./spotify";
-import { dayKey, foldPlays, mergeScores, topN, windowDays } from "./spotify";
+import { dayKey, foldPlays, mergeScores, playlistId, topN, windowDays } from "./spotify";
 
 describe("dayKey", () => {
   it("returns the UTC calendar day", () => {
@@ -79,6 +79,7 @@ const play = (playedAt: number, id: string): PlayEvent => ({
   playedAt,
   track: track(id),
   artist: { id: `artist-${id}`, name: "Someone", url: "https://x", art: null },
+  playlist: null,
 });
 
 describe("foldPlays", () => {
@@ -129,6 +130,27 @@ describe("foldPlays", () => {
 });
 
 // --- read merging -----------------------------------------------------------
+
+describe("playlistId", () => {
+  it("extracts the id from a playlist context", () => {
+    expect(playlistId({ type: "playlist", uri: "spotify:playlist:4bmHZ3DJ6u9gGSFF0KshTX" })).toBe(
+      "4bmHZ3DJ6u9gGSFF0KshTX",
+    );
+  });
+
+  it("ignores a non-playlist context", () => {
+    expect(playlistId({ type: "album", uri: "spotify:album:1PU4Y8bYmZwCJRwvcbtaFy" })).toBeNull();
+  });
+
+  it("returns null when the play carried no context", () => {
+    expect(playlistId(null)).toBeNull();
+    expect(playlistId(undefined)).toBeNull();
+  });
+
+  it("returns null rather than an empty id for a truncated uri", () => {
+    expect(playlistId({ type: "playlist", uri: "spotify:playlist:" })).toBeNull();
+  });
+});
 
 describe("mergeScores", () => {
   it("sums a member's score across day buckets", () => {

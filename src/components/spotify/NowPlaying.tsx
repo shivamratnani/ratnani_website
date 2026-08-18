@@ -8,6 +8,19 @@ const POLL_MS = 30_000;
 /** How often the local progress estimate advances between polls. */
 const TICK_MS = 1_000;
 
+/**
+ * Sized against its own column rather than the viewport: the card renders in a
+ * one-column phone layout, in a ~300px column at 2xl, and full width on /now,
+ * and no viewport breakpoint separates the first two from the third.
+ *
+ * The cover stays square and absorbs the row's slack (`flex-auto min-h-0`)
+ * rather than setting its height, so the card tracks the lists beside it
+ * instead of driving them. `object-cover` crops if the row is shorter than the
+ * art is wide.
+ */
+const ART =
+  "aspect-square w-full min-h-0 flex-auto rounded-lg object-cover @sm:aspect-auto @sm:size-14 @sm:flex-none @sm:rounded";
+
 function clock(ms: number): string {
   const total = Math.max(0, Math.round(ms / 1000));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
@@ -65,58 +78,58 @@ export function NowPlaying({ initial }: { initial: NowPlayingData }) {
     track.playing && track.durationMs ? Math.min(100, (progress / track.durationMs) * 100) : null;
 
   return (
-    <a
-      href={track.url}
-      target="_blank"
-      rel="noreferrer noopener"
-      className="group flex max-w-md items-center gap-4 rounded-lg border border-ink-3 bg-ink-1 p-3 transition-colors duration-300 hover:border-ash-1/40"
-    >
-      {track.art ? (
-        <Image
-          src={track.art}
-          alt=""
-          width={56}
-          height={56}
-          unoptimized
-          className="size-14 shrink-0 rounded"
-        />
-      ) : (
-        <span className="size-14 shrink-0 rounded bg-ink-2" />
-      )}
-
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2 font-mono text-[10px] text-ash-1 uppercase tracking-widest">
-          {track.playing ? (
-            <span className="relative flex size-1.5">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-red opacity-75 motion-reduce:animate-none" />
-              <span className="relative inline-flex size-1.5 rounded-full bg-red" />
-            </span>
-          ) : (
-            <span className="size-1.5 rounded-full bg-ash-1" />
-          )}
-          {track.playing ? "Now playing" : "Last played"}
-        </span>
-
-        <span className="mt-1 block truncate text-ash-3 text-sm">{track.name}</span>
-        <span className="block truncate text-ash-1 text-xs">
-          {track.artist} · {track.album}
-        </span>
-
-        {percent === null ? null : (
-          <span className="mt-2 block">
-            <span className="block h-px w-full overflow-hidden bg-ink-3">
-              <span
-                className="block h-px bg-red transition-[width] duration-1000 ease-linear"
-                style={{ width: `${percent}%` }}
-              />
-            </span>
-            <span className="mt-1 flex justify-between font-mono text-[10px] text-ash-1 tabular-nums">
-              <span>{clock(progress)}</span>
-              <span>{clock(track.durationMs ?? 0)}</span>
-            </span>
-          </span>
+    // Narrow column: a lock-screen player, cover first. Wide: a compact row, so
+    // a full-width slot does not turn the cover into a billboard. The query is
+    // on the wrapper — an element cannot size itself against its own container.
+    <div className="@container h-full">
+      <a
+        href={track.url}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="group flex h-full w-full max-w-md flex-col gap-4 rounded-xl border border-ink-3 bg-ink-1 p-4 transition-colors duration-300 hover:border-ash-1/40 @sm:flex-row @sm:items-center @sm:rounded-lg @sm:p-3"
+      >
+        {track.art ? (
+          <Image src={track.art} alt="" width={320} height={320} unoptimized className={ART} />
+        ) : (
+          <span className={`${ART} bg-ink-2`} />
         )}
-      </span>
-    </a>
+
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2 font-mono text-[10px] text-ash-1 uppercase tracking-widest">
+            {track.playing ? (
+              <span className="relative flex size-1.5">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-red opacity-75 motion-reduce:animate-none" />
+                <span className="relative inline-flex size-1.5 rounded-full bg-red" />
+              </span>
+            ) : (
+              <span className="size-1.5 rounded-full bg-ash-1" />
+            )}
+            {track.playing ? "Now playing" : "Last played"}
+          </span>
+
+          <span className="mt-1.5 block truncate font-medium text-ash-3 text-base @sm:text-sm">
+            {track.name}
+          </span>
+          <span className="block truncate text-ash-1 text-xs">
+            {track.artist} · {track.album}
+          </span>
+
+          {percent === null ? null : (
+            <span className="mt-3 block">
+              <span className="block h-1 w-full overflow-hidden rounded-full bg-ink-3">
+                <span
+                  className="block h-full rounded-full bg-red transition-[width] duration-1000 ease-linear"
+                  style={{ width: `${percent}%` }}
+                />
+              </span>
+              <span className="mt-1.5 flex justify-between font-mono text-[10px] text-ash-1 tabular-nums">
+                <span>{clock(progress)}</span>
+                <span>{clock(track.durationMs ?? 0)}</span>
+              </span>
+            </span>
+          )}
+        </span>
+      </a>
+    </div>
   );
 }

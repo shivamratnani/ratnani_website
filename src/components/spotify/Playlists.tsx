@@ -1,19 +1,20 @@
 import Image from "next/image";
 import { Stagger, StaggerItem } from "@/components/motion/Stagger";
-import type { Playlist } from "@/lib/spotify";
+import type { Playlist, Ranked } from "@/lib/spotify";
 
 /**
- * Public playlists as a card grid. Renders nothing when the list is empty —
- * the fetch degrades to `[]` when the token lacks the playlist scope, and an
- * empty section reads as broken rather than as "none yet".
+ * My playlists ranked by how much I actually played them. Renders nothing when
+ * the list is empty — plays only attribute to playlists in my own library, so a
+ * quiet window is normal and an empty section reads as broken rather than as
+ * "nothing yet".
  */
-export function Playlists({ playlists }: { playlists: Playlist[] }) {
+export function Playlists({ title, playlists }: { title: string; playlists: Ranked<Playlist>[] }) {
   if (playlists.length === 0) return null;
 
   return (
     <div className="space-y-4">
-      <h3 className="font-mono text-[11px] text-ash-1 uppercase tracking-widest">Playlists</h3>
-      <Stagger className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+      <h3 className="font-mono text-[11px] text-ash-1 uppercase tracking-widest">{title}</h3>
+      <Stagger className="space-y-3">
         {playlists.map((playlist) => (
           <StaggerItem key={playlist.id}>
             <a
@@ -37,7 +38,8 @@ export function Playlists({ playlists }: { playlists: Playlist[] }) {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-ash-3 text-sm">{playlist.name}</span>
                 <span className="block font-mono text-[11px] text-ash-1">
-                  {playlist.tracks} {playlist.tracks === 1 ? "track" : "tracks"}
+                  {playlist.plays} {playlist.plays === 1 ? "play" : "plays"} · {playlist.tracks}{" "}
+                  {playlist.tracks === 1 ? "track" : "tracks"}
                 </span>
               </span>
             </a>
