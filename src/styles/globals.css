@@ -118,13 +118,13 @@
  * own animation-delay, so one keyframe drives the whole wave on the compositor. */
 @keyframes dot-shimmer {
   0%,
-  70%,
+  68%,
   100% {
-    /* Floor stays high on purpose: dip much below this and the wave dissolves
-     * the letterforms instead of travelling across them. */
-    opacity: 0.72;
+    /* Low enough that the crest is unmistakable, high enough that the
+     * letterforms never dissolve into the wave. */
+    opacity: 0.5;
   }
-  35% {
+  30% {
     opacity: 1;
   }
 }

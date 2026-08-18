@@ -5,7 +5,7 @@ import { DURATION, EASE_OUT_EXPO } from "@/components/motion/transitions";
 import { DOT_RADIUS, MARK_DOTS, MARK_HEIGHT, MARK_WIDTH } from "@/data/mark";
 
 /** Seconds the idle shimmer takes to cross the whole mark. */
-const SHIMMER_PERIOD = 2.6;
+const SHIMMER_PERIOD = 2.1;
 
 /** The path the hover beam races along — a diagonal sweep across the mark. */
 const BEAM_PATH = `M0 ${MARK_HEIGHT} L${MARK_WIDTH} 0`;
@@ -66,7 +66,7 @@ export function Logo({ className }: { className?: string }) {
               strokeDasharray="0.35 1"
               variants={{
                 idle: { strokeDashoffset: 1.35, opacity: 0 },
-                active: { strokeDashoffset: -0.35, opacity: 1 },
+                active: { strokeDashoffset: -0.35, opacity: [0, 1, 1, 0] },
               }}
               transition={{ ...beamTransition, delay: beam.delay }}
             />

@@ -82,7 +82,7 @@ export default function HomePage() {
 
       <Section id="contact" index="03" title="Contact">
         <Reveal className="mb-6">
-          <p className={cn(MEASURE, "text-ash-2 leading-relaxed")}>
+          <p className={cn(MEASURE, "mx-auto text-center text-ash-2 leading-relaxed")}>
             Building something that needs to survive real users? Reach me at{" "}
             <a href={`mailto:${site.email}`} className="link-sweep text-ash-3">
               {site.email}

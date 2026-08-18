@@ -122,46 +122,52 @@ export function Experience() {
   const earlier = experience.filter((role) => role.tier === "earlier");
 
   return (
-    <div className="border-ink-3 border-b">
-      {primary.map((role) => (
-        <RoleRow key={`${role.company}-${role.start}`} role={role} />
-      ))}
-
-      <AnimatePresence initial={false}>
-        {showEarlier ? (
-          <motion.div key="earlier" {...collapse(reduced)} className="overflow-hidden">
-            {earlier.map((role) => (
-              <RoleRow key={`${role.company}-${role.start}`} role={role} />
-            ))}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-
-      <Reveal className="border-ink-3 border-t">
-        <div className={cn(ROW, "rule-sweep hover:[background-size:100%_1px]")}>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-medium text-ash-3 text-base">
-              {education.school}
-              <span className="text-ash-1"> · {education.degree}</span>
-            </h3>
-          </div>
-          <div className={META}>
-            <span className={PERIOD}>
-              {formatPeriod(education.start)} — {formatPeriod(education.end)}
-            </span>
-            <span aria-hidden="true" className={TOGGLE} />
+    <div>
+      {/* Education reads as its own thing rather than a trailing row: one
+       * line, labelled, above the roles it came before. */}
+      <Reveal className="mb-10 space-y-3">
+        <h3 className="font-mono text-[11px] text-ash-1 uppercase tracking-widest">Education</h3>
+        <div className="border-ink-3 border-t border-b">
+          <div className={ROW}>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-medium text-ash-3 text-base">
+                {education.school}
+                <span className="text-ash-1"> · {education.degree}</span>
+              </h4>
+            </div>
+            <div className={META}>
+              <span className={PERIOD}>
+                {formatPeriod(education.start)} — {formatPeriod(education.end)}
+              </span>
+            </div>
           </div>
         </div>
       </Reveal>
 
-      <button
-        type="button"
-        onClick={() => setShowEarlier((value) => !value)}
-        aria-expanded={showEarlier}
-        className="w-full cursor-pointer border-ink-3 border-t py-5 text-left font-mono text-[11px] text-ash-1 uppercase tracking-widest transition-colors hover:text-red"
-      >
-        {showEarlier ? "− hide earlier roles" : `+ ${earlier.length} earlier roles`}
-      </button>
+      <div className="border-ink-3 border-b">
+        {primary.map((role) => (
+          <RoleRow key={`${role.company}-${role.start}`} role={role} />
+        ))}
+
+        <AnimatePresence initial={false}>
+          {showEarlier ? (
+            <motion.div key="earlier" {...collapse(reduced)} className="overflow-hidden">
+              {earlier.map((role) => (
+                <RoleRow key={`${role.company}-${role.start}`} role={role} />
+              ))}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        <button
+          type="button"
+          onClick={() => setShowEarlier((value) => !value)}
+          aria-expanded={showEarlier}
+          className="w-full cursor-pointer border-ink-3 border-t py-5 text-left font-mono text-[11px] text-ash-1 uppercase tracking-widest transition-colors hover:text-red"
+        >
+          {showEarlier ? "− hide earlier roles" : `+ ${earlier.length} earlier roles`}
+        </button>
+      </div>
     </div>
   );
 }
