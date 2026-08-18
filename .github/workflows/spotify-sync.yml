@@ -1,14 +1,17 @@
 name: Spotify sync
 
-# Every 30 minutes. Vercel Cron is capped at once per day on Hobby, which would
-# make a true rolling 7-day window impossible — hence Actions.
+# Every 5 minutes — GitHub's floor for scheduled workflows, and in practice runs
+# are queued rather than punctual, so treat it as "roughly every 5 minutes".
+# Vercel Cron is capped at once per day on Hobby, which would make a true rolling
+# window impossible — hence Actions. The now-playing line does not depend on this
+# at all: it polls the API directly from the browser every 30 seconds.
 #
 # NOTE: GitHub disables scheduled workflows on public repos after 60 days with
 # no repository activity. The Now page surfaces "synced Xm ago" so a stalled
 # cron is visible rather than silent. Re-enable from the Actions tab if it stops.
 on:
   schedule:
-    - cron: "3,33 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 concurrency:
