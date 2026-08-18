@@ -39,14 +39,14 @@ async function Listening() {
 
       <div className="grid gap-10 sm:grid-cols-2">
         <TopList
-          title="Top tracks · 7 weeks"
+          title="Top tracks · 4 weeks"
           entries={season.tracks.map((track) => ({ ...track, sub: track.artist }))}
         />
-        <TopList title="Top artists · 7 weeks" entries={season.artists} />
+        <TopList title="Top artists · 4 weeks" entries={season.artists} />
       </div>
 
       <p className="font-mono text-[11px] text-ash-1">
-        Rolling windows over the same play history — the 7-week view fills in as the sync runs ·{" "}
+        Rolling windows over the same play history — the 4-week view fills in as the sync runs ·{" "}
         {week.syncedAt ? <TimeAgo value={week.syncedAt} prefix="synced " /> : "never synced"}
       </p>
     </div>

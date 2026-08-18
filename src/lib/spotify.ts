@@ -10,12 +10,12 @@ const API = "https://api.spotify.com/v1";
 /** Days retained. One more than the 7 we report, so the window never underfills. */
 /** Per-day keys live this long. Must exceed the widest reporting window below,
  * with a day of slack so the oldest day is never expiring mid-read. */
-const RETENTION_DAYS = 50;
+const RETENTION_DAYS = 30;
 const WINDOW_DAYS = 7;
-/** The long view: seven weeks. Only fills in as the sync runs — Spotify's
+/** The long view: four weeks. Only fills in as the sync runs — Spotify's
  * recently-played endpoint returns the last 50 plays and nothing older, so
  * there is no way to backfill a window that predates the first sync. */
-const SEASON_DAYS = 49;
+const SEASON_DAYS = 28;
 const TTL_SECONDS = RETENTION_DAYS * 24 * 60 * 60;
 
 const KEY = {
@@ -132,6 +132,30 @@ export function windowDays(now: number, days = WINDOW_DAYS): string[] {
   return Array.from({ length: days }, (_, i) => dayKey(now - i * 86_400_000));
 }
 
+const artistsSchema = z.object({
+  artists: z.array(
+    z.object({ id: z.string(), images: z.array(z.object({ url: z.string() })) }).nullable(),
+  ),
+});
+
+/**
+ * recently-played carries simplified artist objects, which have no images, so
+ * artist rows rendered without art. One extra call hydrates them; 50 ids is the
+ * endpoint's maximum and also this sync's page size, so one request covers it.
+ */
+async function artistImages(ids: string[], token: string): Promise<Map<string, string>> {
+  const images = new Map<string, string>();
+  if (ids.length === 0) return images;
+
+  const payload = await api(`/artists?ids=${ids.slice(0, 50).join(",")}`, token);
+  for (const artist of artistsSchema.parse(payload).artists) {
+    // Smallest image on offer — these render at 36px.
+    const url = artist?.images.at(-1)?.url;
+    if (artist && url) images.set(artist.id, url);
+  }
+  return images;
+}
+
 export type PlayEvent = {
   playedAt: number;
   track: Track;
@@ -231,6 +255,25 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
     ];
   });
 
+  // Hydrate art before the pipeline is built, so the meta written below is
+  // complete rather than needing a second pass.
+  const wanted = new Set(events.flatMap((event) => (event.artist ? [event.artist.id] : [])));
+
+  // Top the request up with artists stored before this existed, so their rows
+  // stop rendering a blank square instead of waiting to be played again. The
+  // 50-id ceiling is the endpoint's, so this costs no extra request.
+  const stored = (await db.hgetall<Record<string, Artist>>(KEY.artistMeta)) ?? {};
+  const stale = Object.values(stored).filter((artist) => artist && !artist.art);
+  for (const artist of stale) {
+    if (wanted.size >= 50) break;
+    wanted.add(artist.id);
+  }
+
+  const images = await artistImages([...wanted], token);
+  for (const event of events) {
+    if (event.artist) event.artist.art = images.get(event.artist.id) ?? null;
+  }
+
   const { newest, days } = foldPlays(events, cursor ?? 0);
   const pipeline = db.pipeline();
   let ingested = 0;
@@ -248,6 +291,13 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
     }
     pipeline.expire(KEY.trackPlays(day), TTL_SECONDS);
     pipeline.expire(KEY.artistPlays(day), TTL_SECONDS);
+  }
+
+  // Write back the artists that were only in the request for a backfill; they
+  // have no play in this batch, so nothing above would have persisted them.
+  for (const artist of stale) {
+    const art = images.get(artist.id);
+    if (art) pipeline.hset(KEY.artistMeta, { [artist.id]: { ...artist, art } });
   }
 
   pipeline.set(KEY.cursor, newest);
