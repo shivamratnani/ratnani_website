@@ -62,7 +62,7 @@ export const experience: readonly Role[] = [
     start: "2026-01",
     end: "Present",
     tier: "primary",
-    url: "https://www.alura.love",
+    url: "https://alura.love",
     tagline: "Architecture and technical direction after shipping v0",
     summary: "Advising on architecture and technical direction after building v0.",
   },
