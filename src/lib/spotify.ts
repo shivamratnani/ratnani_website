@@ -446,9 +446,12 @@ const playlistsSchema = z.object({
         id: z.string(),
         name: z.string(),
         external_urls: z.object({ spotify: z.string() }),
-        images: imageSchema.nullable(),
-        tracks: z.object({ total: z.number() }).nullable(),
-        public: z.boolean().nullable(),
+        // Every field past the id is optional in practice: Spotify omits images
+        // on empty playlists and tracks/public on some collaborative ones, and a
+        // strict schema would throw the whole list away over one odd entry.
+        images: imageSchema.nullish(),
+        tracks: z.object({ total: z.number() }).nullish(),
+        public: z.boolean().nullish(),
       })
       .nullable(),
   ),

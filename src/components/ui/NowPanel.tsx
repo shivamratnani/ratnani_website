@@ -12,9 +12,10 @@ import { getNowPlaying, getSpotifyWeek } from "@/lib/spotify";
  * than the roles beside it. */
 const LIMIT = 5;
 
-/** Skeleton matched to the loaded height, so nothing shifts when it resolves. */
+/** Skeleton matched to the loaded height, so nothing shifts when it resolves —
+ * shorter at 2xl, where the ticker moves beside the lists instead of above them. */
 export function ListeningPreviewFallback() {
-  return <div className="h-[420px] animate-pulse rounded-lg bg-ink-1" />;
+  return <div className="h-[500px] animate-pulse rounded-lg bg-ink-1 2xl:h-[360px]" />;
 }
 
 export async function ListeningPreview() {
@@ -26,28 +27,31 @@ export async function ListeningPreview() {
   ]);
 
   return (
-    <div className="space-y-8">
-      <NowPlaying initial={playing} />
-      {/* Side by side: stacked, the two lists ran twice the height of the roles
-       * beside them and left the left column empty. */}
-      <div className="grid gap-8 sm:grid-cols-2">
-        <TopList
-          title="Top tracks · 7 days"
-          entries={week.tracks.map((track) => ({ ...track, sub: track.artist }))}
-        />
-        <TopList title="Top artists · 7 days" entries={week.artists} />
+    // One row of columns rather than a stack: the ticker is a third the height
+    // of a five-row list, so stacking it left the panel far deeper than the
+    // roles beside it. `content-center` sits the card on the lists' midline.
+    <div className="grid gap-8 sm:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid content-center sm:col-span-2 2xl:col-span-1">
+        <NowPlaying initial={playing} />
       </div>
+      <TopList
+        title="Top tracks · 7 days"
+        entries={week.tracks.map((track) => ({ ...track, sub: track.artist }))}
+      />
+      <TopList title="Top artists · 7 days" entries={week.artists} />
     </div>
   );
 }
 
 /**
- * Two columns: what I'm working on, and what I've been listening to. They are
- * independent — the listening side streams — so the roles never wait on Spotify.
+ * What I'm working on, then what I've been listening to. The listening side
+ * widens to three columns at 2xl so the whole panel reads as one row of even
+ * height. The two halves are independent — the listening side streams — so the
+ * roles never wait on Spotify.
  */
 export function NowPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+    <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 2xl:grid-cols-[minmax(0,0.95fr)_minmax(0,2.05fr)]">
       <Reveal className="space-y-6">
         <p className={cn(MEASURE, "text-ash-2 leading-relaxed")}>
           Currently in {site.location}, working on:

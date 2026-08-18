@@ -12,6 +12,11 @@ const BEAM_PATH = `M0 ${MARK_HEIGHT} L${MARK_WIDTH} 0`;
 
 const beamTransition = { duration: DURATION.slow, ease: EASE_OUT_EXPO } as const;
 
+/** Seconds between the first dot leaving the mark and the last one. */
+const MORPH_STAGGER = 0.18;
+
+const morphTransition = { duration: DURATION.base, ease: EASE_OUT_EXPO } as const;
+
 /** White head first, red trailing behind it — the hero's beam, on the logo. */
 const beams = [
   { color: "var(--color-ash-3)", width: 1.1, delay: 0 },
@@ -35,12 +40,23 @@ export function Logo({ className }: { className?: string }) {
       <title>Shivam Ratnani</title>
 
       {MARK_DOTS.map((dot) => (
-        <circle
+        <motion.circle
           key={`${dot.x}-${dot.y}`}
           cx={dot.x}
           cy={dot.y}
           r={DOT_RADIUS}
           fill="currentColor"
+          variants={
+            reduced
+              ? undefined
+              : {
+                  idle: { cx: dot.x, cy: dot.y },
+                  active: { cx: dot.to.x, cy: dot.to.y },
+                }
+          }
+          // Dots nearest the beam's start move first, so the mark comes apart
+          // along the same diagonal the shimmer travels.
+          transition={{ ...morphTransition, delay: dot.phase * MORPH_STAGGER }}
           style={
             reduced
               ? { opacity: 0.75 }
