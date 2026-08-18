@@ -28,7 +28,7 @@ jobs:
         env:
           # Build-time placeholders. Data fetching is request-time, so these only
           # need to satisfy schema validation, never to authenticate.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ci
           SPOTIFY_CLIENT_ID: ci
           SPOTIFY_CLIENT_SECRET: ci
           SPOTIFY_REFRESH_TOKEN: ci
