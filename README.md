@@ -92,6 +92,11 @@ window prunes itself. A stored cursor makes re-runs idempotent — verified by t
 This is an Action rather than a Vercel Cron because **Vercel Hobby crons are capped at once per
 day** and fail at deploy time on anything more frequent.
 
+> ⚠️ The cron endpoint must be publicly reachable. Vercel's deployment protection is set to
+> `all_except_custom_domains`, so `*.vercel.app` URLs 302 to SSO and the Action would silently
+> fail against them. The workflow targets `https://sh1v.com`, which bypasses protection once the
+> domain's DNS resolves to Vercel — until then the sync cannot run.
+>
 > ⚠️ GitHub disables scheduled workflows on public repos after **60 days without repository
 > activity**. The Now page renders "synced Xm ago" so a stalled cron is visible rather than silent.
 > Re-enable it from the Actions tab if it stops.
