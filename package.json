@@ -17,7 +17,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "spotify:auth": "node --experimental-strip-types scripts/spotify-auth.ts",
-    "photos": "node --experimental-strip-types scripts/build-photo-manifest.ts"
+    "photos": "node --experimental-strip-types scripts/build-photo-manifest.ts",
+    "env:push": "node --experimental-strip-types scripts/env-push.ts"
   },
   "dependencies": {
     "@upstash/ratelimit": "2.0.8",

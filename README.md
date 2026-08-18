@@ -13,7 +13,8 @@ pnpm typecheck    # tsc --noEmit
 pnpm test         # Vitest
 pnpm build
 pnpm photos       # regenerate src/data/photos.ts after changing public/photos
-pnpm spotify:auth # one-time: mint a Spotify refresh token
+pnpm spotify:auth # one-time: mint a Spotify refresh token into .env.local
+pnpm env:push     # sync .env.local to Vercel (production by default)
 ```
 
 ## Architecture
@@ -45,23 +46,33 @@ quartile, section indices, the ⌘K active row, focus rings, link sweeps, and `:
 Copy `.env.example`. Every variable is validated by `src/lib/env.ts` at first use, so a missing
 one fails with a message naming it.
 
-```bash
-# Vercel — repeat with `preview` for the preview environment
-vercel env add GITHUB_TOKEN production          # fine-grained PAT, read:user
-vercel env add SPOTIFY_CLIENT_ID production
-vercel env add SPOTIFY_CLIENT_SECRET production
-vercel env add SPOTIFY_REFRESH_TOKEN production # from `pnpm spotify:auth`
-vercel env add RESEND_API_KEY production
-vercel env add CONTACT_TO_EMAIL production
-vercel env add CRON_SECRET production           # openssl rand -hex 32
+Fill in `.env.local`, then push it — values go to Vercel over stdin, so no secret
+ever lands in your shell history or the process table:
 
-# GitHub — the Actions cron needs only this
-gh secret set CRON_SECRET
+```bash
+cp .env.example .env.local   # then fill it in
+pnpm env:push                # production
+pnpm env:push preview        # preview
+
+gh secret set CRON_SECRET    # the Actions cron needs only this
 ```
 
 `UPSTASH_REDIS_REST_URL` / `_TOKEN` are injected by the Vercel Marketplace integration — do not
 set them by hand. Use **different** `CRON_SECRET`s and **separate Upstash databases** for Preview
 and Production, so preview deploys can never write into the production 7-day window.
+
+## Spotify setup, once
+
+1. Accept the Spotify Developer Terms at https://developer.spotify.com/dashboard.
+2. **Create app** — any name. Set the redirect URI to exactly:
+   ```
+   http://127.0.0.1:8888/callback
+   ```
+   Spotify rejects `localhost`; a loopback IP literal is required. Check **Web API**.
+3. Copy the Client ID and Client Secret into `.env.local`.
+4. `pnpm spotify:auth` — opens the consent screen and writes `SPOTIFY_REFRESH_TOKEN`
+   back into `.env.local` for you.
+5. `pnpm env:push`.
 
 ## The Spotify 7-day window
 
