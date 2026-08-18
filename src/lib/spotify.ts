@@ -28,6 +28,7 @@ const KEY = {
   cursor: "sync:cursor",
   playlistBackfill: "sync:playlists-backfilled",
   syncedAt: "sync:at",
+  lastPlayed: "sync:last-played",
 } as const;
 
 export type Track = { id: string; name: string; artist: string; url: string; art: string | null };
@@ -46,11 +47,29 @@ export type SpotifyWeek = {
 // --- auth -------------------------------------------------------------------
 
 /**
- * Exchanges the long-lived refresh token for an access token. Not cached —
- * the sync runs every 30 min and tokens live an hour, so caching would add a
- * staleness bug for no measurable gain.
+ * Spotify's 429, carried as its own type so the cron route can tell "cool off
+ * and retry later" apart from a genuinely broken sync.
+ */
+export class SpotifyRateLimitError extends Error {
+  constructor(readonly retryAfterSeconds: number | null) {
+    super(
+      `Spotify rate limit exceeded${retryAfterSeconds ? `; retry after ${retryAfterSeconds}s` : ""}`,
+    );
+    this.name = "SpotifyRateLimitError";
+  }
+}
+
+let cachedToken: { value: string; expiresAt: number } | null = null;
+
+/**
+ * Exchanges the long-lived refresh token for an access token, cached in-module
+ * until shortly before it expires. The now-playing route calls this on every
+ * browser poll, and minting a fresh token per poll is what once blew the app's
+ * request quota — a warm serverless instance reuses this one instead.
  */
 async function accessToken(): Promise<string> {
+  if (cachedToken && Date.now() < cachedToken.expiresAt) return cachedToken.value;
+
   const env = requireEnv("SPOTIFY_CLIENT_ID", "SPOTIFY_CLIENT_SECRET", "SPOTIFY_REFRESH_TOKEN");
   const basic = Buffer.from(`${env.SPOTIFY_CLIENT_ID}:${env.SPOTIFY_CLIENT_SECRET}`).toString(
     "base64",
@@ -87,7 +106,16 @@ async function accessToken(): Promise<string> {
     );
   }
 
-  return z.object({ access_token: z.string() }).parse(await response.json()).access_token;
+  const parsed = z
+    .object({ access_token: z.string(), expires_in: z.number() })
+    .parse(await response.json());
+
+  // A minute of slack so a token never expires mid-request.
+  cachedToken = {
+    value: parsed.access_token,
+    expiresAt: Date.now() + (parsed.expires_in - 60) * 1000,
+  };
+  return parsed.access_token;
 }
 
 async function api(path: string, token: string): Promise<unknown> {
@@ -96,6 +124,12 @@ async function api(path: string, token: string): Promise<unknown> {
     cache: "no-store",
   });
   if (response.status === 204) return null;
+  if (response.status === 429) {
+    const retryAfter = Number(response.headers.get("retry-after"));
+    throw new SpotifyRateLimitError(
+      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null,
+    );
+  }
   if (!response.ok) throw new Error(`Spotify ${path} failed (${response.status})`);
   return response.json();
 }
@@ -404,6 +438,22 @@ export async function syncRecentlyPlayed(now = Date.now()): Promise<{ ingested: 
   const pipeline = db.pipeline();
   let ingested = 0;
 
+  // The newest play, stored whole so the now-playing fallback can answer from
+  // Redis instead of asking Spotify for history on every browser poll — the
+  // per-poll history call is what once exhausted the app's request quota.
+  const freshest = items.reduce((a, b) =>
+    Date.parse(a.played_at) >= Date.parse(b.played_at) ? a : b,
+  );
+  pipeline.set(KEY.lastPlayed, {
+    name: freshest.track.name,
+    artist: freshest.track.artists.map((a) => a.name).join(", "),
+    album: freshest.track.album.name,
+    url: freshest.track.external_urls.spotify,
+    // First image, not last: the card renders it large.
+    art: freshest.track.album.images.at(0)?.url ?? null,
+    playedAt: Date.parse(freshest.played_at),
+  } satisfies LastPlayed);
+
   for (const [day, plays] of days) {
     for (const play of plays) {
       ingested += 1;
@@ -615,51 +665,68 @@ export type NowPlaying = {
   durationMs: number | null;
 } | null;
 
-/** Currently playing track, or null when nothing is. Never cached. */
-export async function getNowPlaying(): Promise<NowPlaying> {
-  const token = await accessToken();
-  const payload = await api("/me/player/currently-playing", token);
-  const parsed = payload ? nowPlayingSchema.safeParse(payload) : null;
+/** What the sync stores under KEY.lastPlayed. */
+type LastPlayed = {
+  name: string;
+  artist: string;
+  album: string;
+  url: string;
+  art: string | null;
+  playedAt: number;
+};
 
-  if (parsed?.success && parsed.data.is_playing && parsed.data.item) {
-    const { item } = parsed.data;
-    return {
-      name: item.name,
-      artist: item.artists.map((a) => a.name).join(", "),
-      album: item.album.name,
-      url: item.external_urls.spotify,
-      // First image, not last: this one is rendered large enough to want it.
-      art: item.album.images.at(0)?.url ?? null,
-      playing: true,
-      progressMs: parsed.data.progress_ms ?? null,
-      durationMs: item.duration_ms ?? null,
-    };
+/**
+ * Currently playing track, falling back to the last play the sync stored.
+ * Only the live check touches Spotify; the fallback reads Redis, so an idle
+ * player — or a rate-limited API — costs no history requests.
+ */
+export async function getNowPlaying(): Promise<NowPlaying> {
+  try {
+    const token = await accessToken();
+    const payload = await api("/me/player/currently-playing", token);
+    const parsed = payload ? nowPlayingSchema.safeParse(payload) : null;
+
+    if (parsed?.success && parsed.data.is_playing && parsed.data.item) {
+      const { item } = parsed.data;
+      return {
+        name: item.name,
+        artist: item.artists.map((a) => a.name).join(", "),
+        album: item.album.name,
+        url: item.external_urls.spotify,
+        // First image, not last: this one is rendered large enough to want it.
+        art: item.album.images.at(0)?.url ?? null,
+        playing: true,
+        progressMs: parsed.data.progress_ms ?? null,
+        durationMs: item.duration_ms ?? null,
+      };
+    }
+  } catch (error) {
+    // A rate limit or blip on the live check should not blank the card while
+    // Redis still remembers the last play.
+    console.warn("[spotify] currently-playing unavailable:", error);
   }
 
   // Nothing playing: show the last thing that was, rather than an empty line.
-  return lastPlayed(token);
+  return lastPlayed();
 }
 
-/** The most recent play, or null if the history is empty or unreadable. */
-async function lastPlayed(token: string): Promise<NowPlaying> {
+/** The most recent play the sync recorded, or null before the first sync. */
+async function lastPlayed(): Promise<NowPlaying> {
   try {
-    const payload = await api("/me/player/recently-played?limit=1", token);
-    const item = recentSchema.parse(payload).items[0];
-    if (!item) return null;
-
-    const { track } = item;
+    const stored = await redis().get<LastPlayed>(KEY.lastPlayed);
+    if (!stored) return null;
     return {
-      name: track.name,
-      artist: track.artists.map((a) => a.name).join(", "),
-      album: track.album.name,
-      url: track.external_urls.spotify,
-      art: track.album.images.at(0)?.url ?? null,
+      name: stored.name,
+      artist: stored.artist,
+      album: stored.album,
+      url: stored.url,
+      art: stored.art,
       playing: false,
       progressMs: null,
       durationMs: null,
     };
   } catch (error) {
-    console.warn("[spotify] recent history unavailable:", error);
+    console.warn("[spotify] stored last play unavailable:", error);
     return null;
   }
 }
