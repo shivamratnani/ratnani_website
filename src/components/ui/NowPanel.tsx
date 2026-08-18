@@ -8,14 +8,20 @@ import { site } from "@/data/site";
 import { cn } from "@/lib/cn";
 import { getNowPlaying, getSpotifyWeek } from "@/lib/spotify";
 
-/** Five of each: enough to read as a habit without the panel growing deeper
- * than the roles beside it. */
-const LIMIT = 5;
+/** Seven of each. Five left the lists shorter than the roles column beside
+ * them; seven brings all three tracks of the row to about the same depth. */
+const LIMIT = 7;
 
-/** Skeleton matched to the loaded height, so nothing shifts when it resolves —
- * shorter at 2xl, where the ticker moves beside the lists instead of above them. */
+/** Mirrors the loaded grid at every breakpoint rather than guessing one height,
+ * so the panel does not jump when the listening data resolves. */
 export function ListeningPreviewFallback() {
-  return <div className="h-[500px] animate-pulse rounded-lg bg-ink-1 2xl:h-[360px]" />;
+  return (
+    <div className="grid animate-pulse gap-8 sm:grid-cols-2 2xl:grid-cols-3">
+      <div className="h-[405px] rounded-xl bg-ink-1 sm:col-span-2 sm:h-[120px] 2xl:col-span-1 2xl:h-[405px]" />
+      <div className="h-[405px] rounded-lg bg-ink-1" />
+      <div className="h-[405px] rounded-lg bg-ink-1" />
+    </div>
+  );
 }
 
 export async function ListeningPreview() {
@@ -27,11 +33,11 @@ export async function ListeningPreview() {
   ]);
 
   return (
-    // One row of columns rather than a stack: the ticker is a third the height
-    // of a five-row list, so stacking it left the panel far deeper than the
-    // roles beside it. `content-center` sits the card on the lists' midline.
+    // One row of columns rather than a stack, so the panel is no deeper than the
+    // roles beside it. The wrapper stays a plain block: as a grid it sized its
+    // implicit track to the card's max-width and overflowed the next column.
     <div className="grid gap-8 sm:grid-cols-2 2xl:grid-cols-3">
-      <div className="grid content-center sm:col-span-2 2xl:col-span-1">
+      <div className="min-w-0 sm:col-span-2 2xl:col-span-1">
         <NowPlaying initial={playing} />
       </div>
       <TopList

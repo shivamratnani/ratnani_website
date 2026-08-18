@@ -51,9 +51,10 @@ export const experience: readonly Role[] = [
     end: "Present",
     tier: "primary",
     url: "https://paradym.space",
-    tagline: "Outside-in reliability for the MCP servers agents depend on",
+    tagline:
+      "Catching silent API failures for the forward deployed teams and agencies shipping on them",
     summary:
-      "Watching the MCP servers agents are built on: silent changes get caught, confirmed, and turned into ready-made pull requests before users notice.",
+      "Outside-in monitoring for the APIs and MCP servers agents are built on: silent breaking changes get caught, confirmed, and turned into ready-made pull requests before the teams shipping on them hear it from a user.",
   },
   {
     company: "Alura",
