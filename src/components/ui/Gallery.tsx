@@ -101,10 +101,38 @@ export function Gallery({ photos }: { photos: readonly Photo[] }) {
               type="button"
               onClick={() => setIndex(null)}
               aria-label="Close"
-              className="absolute top-4 right-4 rounded px-3 py-1.5 font-mono text-ash-1 text-xs hover:text-red"
+              className="absolute top-2 right-2 flex size-11 items-center justify-center rounded font-mono text-ash-1 text-xs hover:text-red"
             >
               esc
             </button>
+
+            {/* On-screen steppers: the arrow keys' only equivalent on touch. */}
+            {photos.length > 1 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    step(-1);
+                  }}
+                  aria-label="Previous photo"
+                  className="-translate-y-1/2 absolute top-1/2 left-1 flex size-11 items-center justify-center rounded font-mono text-ash-1 text-lg hover:text-red sm:left-3"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    step(1);
+                  }}
+                  aria-label="Next photo"
+                  className="-translate-y-1/2 absolute top-1/2 right-1 flex size-11 items-center justify-center rounded font-mono text-ash-1 text-lg hover:text-red sm:right-3"
+                >
+                  ›
+                </button>
+              </>
+            ) : null}
 
             <p className="absolute bottom-4 font-mono text-[11px] text-ash-1 tabular-nums">
               {(index ?? 0) + 1} / {photos.length}

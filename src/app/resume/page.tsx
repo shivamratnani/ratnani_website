@@ -36,14 +36,15 @@ export default function ResumePage() {
         </div>
       </div>
 
-      {/* Inline viewer for anyone who just wants to read it. Mobile Safari and
-       * some in-app browsers refuse to render a PDF in an iframe, so the links
-       * above are the reliable path and this is the enhancement. */}
+      {/* Inline viewer for anyone who just wants to read it. Phone browsers
+       * either refuse embedded PDFs or paint a single unscrollable page, so
+       * below sm the viewer is gone entirely and the links above are the way
+       * in; here it is the enhancement, not the path. */}
       <object
         data={FILE}
         type="application/pdf"
         aria-label={`${site.name} resume`}
-        className="h-[80svh] w-full rounded-lg border border-ink-3 bg-ink-1"
+        className="hidden h-[80svh] w-full rounded-lg border border-ink-3 bg-ink-1 sm:block"
       >
         <p className="p-6 text-ash-1 text-sm">
           Your browser will not display the PDF inline —{" "}
