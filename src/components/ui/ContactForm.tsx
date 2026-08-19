@@ -4,8 +4,10 @@ import { useState } from "react";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
+/* text-base on phones: iOS Safari zooms the page into any focused field set
+ * below 16px, and never zooms back out. sm+ returns to the site's text-sm. */
 const FIELD =
-  "w-full rounded-md border border-ink-3 bg-ink-1 px-3 py-2.5 text-ash-3 text-sm outline-none transition-colors duration-300 placeholder:text-ash-1 focus:border-red";
+  "w-full rounded-md border border-ink-3 bg-ink-1 px-3 py-2.5 text-ash-3 text-base outline-none transition-colors duration-300 placeholder:text-ash-1 focus:border-red sm:text-sm";
 
 export function ContactForm() {
   const [status, setStatus] = useState<Status>("idle");

@@ -95,7 +95,7 @@ export function CommandPalette() {
               <Command.Input
                 autoFocus
                 placeholder="Jump to…"
-                className="w-full border-ink-3 border-b bg-transparent px-4 py-3.5 text-ash-3 text-sm outline-none placeholder:text-ash-1"
+                className="w-full border-ink-3 border-b bg-transparent px-4 py-3.5 text-ash-3 text-base outline-none placeholder:text-ash-1 sm:text-sm"
               />
               <Command.List className="max-h-72 overflow-y-auto p-2">
                 <Command.Empty className="px-2 py-6 text-center text-ash-1 text-sm">

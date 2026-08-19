@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DURATION, EASE_OUT_EXPO, STAGGER } from "@/components/motion/transitions";
 import type { ContributionDay } from "@/lib/github";
 
@@ -29,6 +29,14 @@ function formatDay(iso: string): string {
 export function Heatmap({ weeks }: { weeks: ContributionDay[][] }) {
   const reduced = useReducedMotion();
   const [hovered, setHovered] = useState<ContributionDay | null>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+
+  // Weeks run oldest → newest, so a phone-width scroller opens on the stale
+  // end. Start at the newest instead; a no-op wherever the grid fits.
+  useEffect(() => {
+    const element = scroller.current;
+    if (element) element.scrollLeft = element.scrollWidth;
+  }, []);
 
   return (
     <div>
@@ -41,21 +49,26 @@ export function Heatmap({ weeks }: { weeks: ContributionDay[][] }) {
             {hovered.count === 1 ? "contribution" : "contributions"} on {formatDay(hovered.date)}
           </>
         ) : (
-          <span className="text-ash-1/70">Hover a day for its contributions</span>
+          <span className="text-ash-1/70">Hover or tap a day for its contributions</span>
         )}
       </p>
 
-      <div className="overflow-x-auto pb-2 [mask-image:linear-gradient(90deg,black_calc(100%-3rem),transparent)] sm:[mask-image:none]">
-        <div className="flex gap-3">
-          <div
-            className="flex shrink-0 flex-col justify-between py-[2px] font-mono text-[10px] text-ash-1"
-            aria-hidden="true"
-          >
-            {DAY_LABELS.map((label) => (
-              <span key={label}>{label}</span>
-            ))}
-          </div>
+      {/* Labels sit outside the scroller so they hold still while the weeks
+       * pan. The fade sits on the older edge — the side with more to see. */}
+      <div className="flex gap-3">
+        <div
+          className="flex shrink-0 flex-col justify-between py-[2px] pb-[calc(2px+0.5rem)] font-mono text-[10px] text-ash-1"
+          aria-hidden="true"
+        >
+          {DAY_LABELS.map((label) => (
+            <span key={label}>{label}</span>
+          ))}
+        </div>
 
+        <div
+          ref={scroller}
+          className="overflow-x-auto pb-2 [mask-image:linear-gradient(90deg,transparent,black_3rem)] sm:[mask-image:none]"
+        >
           <div className="flex gap-[3px]" onPointerLeave={() => setHovered(null)}>
             {weeks.map((week, weekIndex) => (
               <div key={week[0]?.date ?? weekIndex} className="flex flex-col gap-[3px]">
