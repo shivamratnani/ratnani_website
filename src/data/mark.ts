@@ -46,11 +46,12 @@ export const MARK_DOTS: readonly MarkDot[] = markPoints.map((point) => ({
 }));
 
 /**
- * The hover state: Icarus falling on a bottom-left diagonal — head leading
- * the dive at the bottom left, one leg kicked to the top right, the other
- * extended mid right, and one solid white wing rooted at the middle of his
- * back curving up on a slight diagonal (scalloped feather tips, no sky
- * inside it) — under a perfect red sun, over a sea of cloud. Tonal, not monochrome: `#` is a wing (white), `b` the
+ * The hover state: Icarus falling on a bottom-left diagonal — a body with
+ * real anatomy: head and neck leading the dive at the bottom left, a filled
+ * torso broad at the shoulders and pinched at the waist, an arm thrown up in
+ * front of the wing, thick thighs tapering to calves (one leg kicked top
+ * right, one extended mid right), and one solid white wing rooted at the
+ * middle of his back curving up on a slight diagonal — under a perfect red sun, over a sea of cloud. Tonal, not monochrome: `#` is a wing (white), `b` the
  * body (brown), `h` the face (light brown), `f` a falling feather (mid grey),
  * `c` the cloud sea (dim), `o` the sun (red).
  *
@@ -70,23 +71,23 @@ const ICARUS = [
   "................##.............................ooooooooooooooo..",
   ".............######.........................f..ooooooooooooooo..",
   "..............#####.........................ff.ooooooooooooooo..",
-  "..............######.............b.............ooooooooooooooo..",
+  "..............######.............bb............ooooooooooooooo..",
   "...............#####............bbb.............ooooooooooooo...",
   "...........##########.........bbbb.....ff.......ooooooooooooo...",
-  ".............########........bbbb.......f........ooooooooooo....",
-  "..............########......bbb...................ooooooooo.....",
-  "...............#######.....bbb......................ooooo.......",
-  "..............#########...bbb.bbbbbf.......f....................",
-  "...............########.bbbbbbbbbb.f.......f....................",
-  "..................#####bbbbbbbb.................................",
-  ".....................bbbbbb...........f.........................",
-  "....................bbbbb.............f.........................",
-  "...................bbbbb.....f..................................",
-  "..................bbbb.......f..................................",
-  "................hhhbb...........ff..............................",
-  "...............hhhh..............f..............................",
-  ".............f..hhh.............................................",
-  ".............f...h..............................................",
+  ".............########........bbb........f........ooooooooooo....",
+  "..............##bb####......bbb...................ooooooooo.....",
+  "...............#bb####.....bbb.....b................ooooo.......",
+  "..............###bb####...bbbbbbbbbb.......f....................",
+  "...............###bb###bbbbbbbbbb..f.......f....................",
+  "..................bbbbbbbbbbbb..................................",
+  "...................bbbbbb.............f.........................",
+  "...................bbbbb..............f.........................",
+  "...................bbb.......f..................................",
+  "..................bbb........f..................................",
+  "................hhb.............ff..............................",
+  "...............hhh...............f..............................",
+  ".............f.hhh..............................................",
+  ".............f..h...............................................",
   "................................................................",
   "................................................................",
   ".................f..............................................",
