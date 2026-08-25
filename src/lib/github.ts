@@ -117,7 +117,8 @@ export type GitHubTracker = {
   total: number;
   /** Column-major: each inner array is one week, oldest first. */
   weeks: ContributionDay[][];
-  currentStreak: number;
+  /** Contributions across the most recent 7 calendar days, today included. */
+  lastWeek: number;
   longestStreak: number;
   bestDay: ContributionDay;
   repos: {
@@ -132,7 +133,9 @@ export type GitHubTracker = {
   languages: { name: string; percent: number }[];
 };
 
-/** Walks the flattened calendar once, collecting both streaks and the best day. */
+/** Walks the flattened calendar once, collecting the streak, the best day, and
+ * the trailing week. The calendar ends today, so the last seven entries are the
+ * last seven days. */
 function summarize(days: ContributionDay[]) {
   let longest = 0;
   let running = 0;
@@ -144,20 +147,9 @@ function summarize(days: ContributionDay[]) {
     if (day.count > best.count) best = day;
   }
 
-  // Current streak counts back from the most recent day. Today is skipped when
-  // empty — the day is still in progress and shouldn't break an active streak.
-  let current = 0;
-  for (let i = days.length - 1; i >= 0; i -= 1) {
-    const day = days[i];
-    if (!day) break;
-    if (day.count === 0) {
-      if (i === days.length - 1) continue;
-      break;
-    }
-    current += 1;
-  }
+  const lastWeek = days.slice(-7).reduce((sum, day) => sum + day.count, 0);
 
-  return { longestStreak: longest, currentStreak: current, bestDay: best };
+  return { longestStreak: longest, lastWeek, bestDay: best };
 }
 
 /** Aggregates per-repo language bytes into whole-account percentages. */

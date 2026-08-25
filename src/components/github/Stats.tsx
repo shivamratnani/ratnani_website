@@ -5,7 +5,7 @@ import type { GitHubTracker } from "@/lib/github";
 export function Stats({ tracker }: { tracker: GitHubTracker }) {
   const items = [
     { label: "contributions ytd", value: tracker.total },
-    { label: "current streak", value: tracker.currentStreak, suffix: "d" },
+    { label: "last 7 days", value: tracker.lastWeek },
     { label: "longest streak", value: tracker.longestStreak, suffix: "d" },
     { label: "best day", value: tracker.bestDay.count },
   ];
