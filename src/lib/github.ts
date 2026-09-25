@@ -146,31 +146,61 @@ function attr(tag: string, name: string): string | undefined {
   return tag.match(new RegExp(`\\s${name}="([^"]*)"`))?.[1];
 }
 
+/** Midnight UTC of an ISO calendar day. */
+const utcDay = (iso: string) => new Date(`${iso}T00:00:00Z`);
+
+/** The ISO calendar day after `iso`. */
+const nextDay = (iso: string) =>
+  new Date(utcDay(iso).getTime() + 86_400_000).toISOString().slice(0, 10);
+
 /**
- * Parses the profile graph's markup into days, oldest first, dropping any
- * after `today` (the fragment always renders the whole year). Each cell's count
- * lives in the `<tool-tip>` that references its id: "12 contributions on …" or
- * "No contributions on …". Throws when nothing parses so the caller can fall
- * back rather than render an empty year.
+ * "12 contributions on …" → 12 and "No contributions on …" → 0. Any other text
+ * means GitHub changed the format, so it throws rather than read as a zero.
  */
-export function parseContributionsHtml(html: string, today: string): ContributionDay[] {
+function tooltipCount(text: string): number {
+  if (text.startsWith("No contributions")) return 0;
+  const count = text.match(/^([\d,]+) contributions? /)?.[1];
+  if (!count) throw new Error(`unrecognised contribution tooltip: ${text}`);
+  return Number(count.replace(/,/g, ""));
+}
+
+/**
+ * Parses the profile graph's markup into the days `from`–`to` inclusive, oldest
+ * first; the fragment always renders the whole year, so later cells are
+ * dropped. Each cell's count lives in the `<tool-tip>` that references its id.
+ * Throws unless every day in the range parses exactly once, so a changed or
+ * partial page takes the caller's fallback instead of an undercount.
+ */
+export function parseContributionsHtml(html: string, from: string, to: string): ContributionDay[] {
   const tips = new Map<string, number>();
   for (const [, tag = "", text = ""] of html.matchAll(/<tool-tip\b([^>]*)>([^<]*)</g)) {
     const id = attr(tag, "for");
-    if (id) tips.set(id, Number.parseInt(text.replace(/,/g, ""), 10) || 0);
+    if (id) tips.set(id, tooltipCount(text.trim()));
   }
 
   const days: ContributionDay[] = [];
   for (const [tag] of html.matchAll(/<td\b[^>]*\bdata-date="[^"]*"[^>]*>/g)) {
-    const date = attr(tag, "data-date");
-    const id = attr(tag, "id");
+    const date = attr(tag, "data-date") ?? "";
+    if (date < from || date > to) continue;
+
+    const count = tips.get(attr(tag, "id") ?? "");
     const level = Number(attr(tag, "data-level"));
-    if (!date || !id || date > today || !tips.has(id) || !(level >= 0 && level <= 4)) continue;
-    days.push({ date, count: tips.get(id) ?? 0, level });
+    if (count === undefined || !Number.isInteger(level) || level < 0 || level > 4) {
+      throw new Error(`contribution cell ${date} did not parse`);
+    }
+    days.push({ date, count, level });
   }
 
-  if (days.length === 0) throw new Error("contribution graph markup did not parse");
-  return days.sort((a, b) => a.date.localeCompare(b.date));
+  days.sort((a, b) => a.date.localeCompare(b.date));
+  let expected = from;
+  for (const day of days) {
+    if (day.date !== expected)
+      throw new Error(`contribution graph expected ${expected}, got ${day.date}`);
+    expected = nextDay(expected);
+  }
+  if (expected !== nextDay(to)) throw new Error(`contribution graph stops before ${to}`);
+
+  return days;
 }
 
 /** Splits days into Sunday-first columns, matching GraphQL's `weeks` shape. */
@@ -178,16 +208,24 @@ export function toWeeks(days: ContributionDay[]): ContributionDay[][] {
   const weeks: ContributionDay[][] = [];
   for (const day of days) {
     const current = weeks.at(-1);
-    if (!current || new Date(`${day.date}T00:00:00Z`).getUTCDay() === 0) weeks.push([day]);
+    if (!current || utcDay(day.date).getUTCDay() === 0) weeks.push([day]);
     else current.push(day);
   }
   return weeks;
 }
 
+/**
+ * The year-to-date calendar as the profile page shows it. Bounded by a timeout
+ * so a stalled response rejects into the GraphQL fallback instead of holding
+ * the tracker open.
+ */
 async function fetchProfileCalendar(from: string, to: string): Promise<ContributionDay[][]> {
-  const response = await fetch(`${CONTRIBUTIONS_URL(site.github)}?from=${from.slice(0, 10)}`);
+  const [start, end] = [from.slice(0, 10), to.slice(0, 10)];
+  const response = await fetch(`${CONTRIBUTIONS_URL(site.github)}?from=${start}`, {
+    signal: AbortSignal.timeout(5_000),
+  });
   if (!response.ok) throw new Error(`GitHub contributions ${response.status}`);
-  return toWeeks(parseContributionsHtml(await response.text(), to.slice(0, 10)));
+  return toWeeks(parseContributionsHtml(await response.text(), start, end));
 }
 
 /** Walks the flattened calendar once, collecting the streak, the best day, and

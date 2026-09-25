@@ -18,7 +18,7 @@ describe("parseContributionsHtml", () => {
   ].join("\n");
 
   it("reads counts from tooltips, sorted oldest first", () => {
-    expect(parseContributionsHtml(html, "2026-12-31")).toEqual([
+    expect(parseContributionsHtml(html, "2026-01-01", "2026-01-03")).toEqual([
       { date: "2026-01-01", count: 0, level: 0 },
       { date: "2026-01-02", count: 1, level: 3 },
       { date: "2026-01-03", count: 1204, level: 4 },
@@ -26,14 +26,37 @@ describe("parseContributionsHtml", () => {
   });
 
   it("drops days after today", () => {
-    expect(parseContributionsHtml(html, "2026-01-02").map((day) => day.date)).toEqual([
-      "2026-01-01",
-      "2026-01-02",
-    ]);
+    expect(parseContributionsHtml(html, "2026-01-01", "2026-01-02").map((day) => day.date)).toEqual(
+      ["2026-01-01", "2026-01-02"],
+    );
   });
 
   it("throws when the markup yields nothing", () => {
-    expect(() => parseContributionsHtml("<html></html>", "2026-12-31")).toThrow();
+    expect(() => parseContributionsHtml("<html></html>", "2026-01-01", "2026-01-03")).toThrow();
+  });
+
+  it("throws on a tooltip it cannot read, rather than counting zero", () => {
+    const changed = html.replace("1 contribution on", "One contribution on");
+    expect(() => parseContributionsHtml(changed, "2026-01-01", "2026-01-03")).toThrow(/tooltip/);
+  });
+
+  it("throws on a cell with no tooltip", () => {
+    const orphan = html.replace(tip("c-5-0", "1 contribution on January 2nd."), "");
+    expect(() => parseContributionsHtml(orphan, "2026-01-01", "2026-01-03")).toThrow(/2026-01-02/);
+  });
+
+  it("throws on a missing or repeated day", () => {
+    const gap = html.replace(cell("2026-01-02", "c-5-0", 3), "");
+    expect(() => parseContributionsHtml(gap, "2026-01-01", "2026-01-03")).toThrow(
+      /expected 2026-01-02/,
+    );
+
+    const repeated = `${html}\n${cell("2026-01-02", "c-5-0", 3)}`;
+    expect(() => parseContributionsHtml(repeated, "2026-01-01", "2026-01-03")).toThrow();
+  });
+
+  it("throws when the calendar stops short of today", () => {
+    expect(() => parseContributionsHtml(html, "2026-01-01", "2026-01-04")).toThrow(/stops before/);
   });
 });
 
