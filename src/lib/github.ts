@@ -6,6 +6,14 @@ import { requireEnv } from "./env";
 const ENDPOINT = "https://api.github.com/graphql";
 
 /**
+ * The HTML fragment behind the profile page's contribution graph. GraphQL's
+ * `contributionCalendar` runs roughly 4% under the profile (8,939 vs 9,297 on
+ * 2026-09-25, short on nearly every day), so the calendar comes from here and
+ * the GraphQL calendar is only the fallback if this markup stops parsing.
+ */
+const CONTRIBUTIONS_URL = (login: string) => `https://github.com/users/${login}/contributions`;
+
+/**
  * One query answers the whole tracker: calendar, pinned repos, and languages.
  * Streaks are derived from the calendar rather than fetched separately.
  */
@@ -133,6 +141,55 @@ export type GitHubTracker = {
   languages: { name: string; percent: number }[];
 };
 
+/** A `<td>` cell's attributes, in whatever order GitHub renders them. */
+function attr(tag: string, name: string): string | undefined {
+  return tag.match(new RegExp(`\\s${name}="([^"]*)"`))?.[1];
+}
+
+/**
+ * Parses the profile graph's markup into days, oldest first, dropping any
+ * after `today` (the fragment always renders the whole year). Each cell's count
+ * lives in the `<tool-tip>` that references its id: "12 contributions on …" or
+ * "No contributions on …". Throws when nothing parses so the caller can fall
+ * back rather than render an empty year.
+ */
+export function parseContributionsHtml(html: string, today: string): ContributionDay[] {
+  const tips = new Map<string, number>();
+  for (const [, tag = "", text = ""] of html.matchAll(/<tool-tip\b([^>]*)>([^<]*)</g)) {
+    const id = attr(tag, "for");
+    if (id) tips.set(id, Number.parseInt(text.replace(/,/g, ""), 10) || 0);
+  }
+
+  const days: ContributionDay[] = [];
+  for (const [tag] of html.matchAll(/<td\b[^>]*\bdata-date="[^"]*"[^>]*>/g)) {
+    const date = attr(tag, "data-date");
+    const id = attr(tag, "id");
+    const level = Number(attr(tag, "data-level"));
+    if (!date || !id || date > today || !tips.has(id) || !(level >= 0 && level <= 4)) continue;
+    days.push({ date, count: tips.get(id) ?? 0, level });
+  }
+
+  if (days.length === 0) throw new Error("contribution graph markup did not parse");
+  return days.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Splits days into Sunday-first columns, matching GraphQL's `weeks` shape. */
+export function toWeeks(days: ContributionDay[]): ContributionDay[][] {
+  const weeks: ContributionDay[][] = [];
+  for (const day of days) {
+    const current = weeks.at(-1);
+    if (!current || new Date(`${day.date}T00:00:00Z`).getUTCDay() === 0) weeks.push([day]);
+    else current.push(day);
+  }
+  return weeks;
+}
+
+async function fetchProfileCalendar(from: string, to: string): Promise<ContributionDay[][]> {
+  const response = await fetch(`${CONTRIBUTIONS_URL(site.github)}?from=${from.slice(0, 10)}`);
+  if (!response.ok) throw new Error(`GitHub contributions ${response.status}`);
+  return toWeeks(parseContributionsHtml(await response.text(), to.slice(0, 10)));
+}
+
 /** Walks the flattened calendar once, collecting the streak, the best day, and
  * the trailing week. The calendar ends today, so the last seven entries are the
  * last seven days. */
@@ -190,9 +247,17 @@ export async function getGitHubTracker(): Promise<GitHubTracker | null> {
 
 async function fetchTracker(): Promise<GitHubTracker> {
   "use cache";
-  cacheLife("hours");
+  // A busy day adds hundreds of contributions; "hours" left the tiles up to an
+  // hour behind the profile.
+  cacheLife({ stale: 300, revalidate: 900, expire: 86_400 });
 
   const { GITHUB_TOKEN } = requireEnv("GITHUB_TOKEN");
+  const range = yearToDate();
+
+  const profileCalendar = fetchProfileCalendar(range.from, range.to).catch((error) => {
+    console.error("[github] profile calendar, using GraphQL's", error);
+    return null;
+  });
 
   const response = await fetch(ENDPOINT, {
     method: "POST",
@@ -202,7 +267,7 @@ async function fetchTracker(): Promise<GitHubTracker> {
     },
     body: JSON.stringify({
       query: QUERY,
-      variables: { login: site.github, ...yearToDate() },
+      variables: { login: site.github, ...range },
     }),
   });
 
@@ -213,18 +278,21 @@ async function fetchTracker(): Promise<GitHubTracker> {
   const { data } = responseSchema.parse(await response.json());
   const calendar = data.user.contributionsCollection.contributionCalendar;
 
-  const weeks = calendar.weeks.map((week) =>
-    week.contributionDays.map((day) => ({
-      date: day.date,
-      count: day.contributionCount,
-      level: LEVELS.indexOf(day.contributionLevel),
-    })),
-  );
+  const weeks =
+    (await profileCalendar) ??
+    calendar.weeks.map((week) =>
+      week.contributionDays.map((day) => ({
+        date: day.date,
+        count: day.contributionCount,
+        level: LEVELS.indexOf(day.contributionLevel),
+      })),
+    );
+  const days = weeks.flat();
 
   return {
-    total: calendar.totalContributions,
+    total: days.reduce((sum, day) => sum + day.count, 0),
     weeks,
-    ...summarize(weeks.flat()),
+    ...summarize(days),
     repos: data.user.pinnedItems.nodes.map((repo) => ({
       name: repo.name,
       description: repo.description,
